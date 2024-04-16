@@ -2,12 +2,11 @@ import puppeteer from "../utils/puppeteer";
 import Async from "async";
 import cheerio from "cheerio";
 import { Request, Response } from "express";
+import { Page } from "puppeteer";
 
-export const tiktokBrand = async (req: Request, res: Response) => {
+export const tiktokBrand = async (req: Request, res: Response, page: Page) => {
   try {
     const newDate = new Date().toISOString();
-    await puppeteer.crawl();
-    let page = await puppeteer.getPage();
     const handle = req.query.handle;
     Async.waterfall(
       [
@@ -20,7 +19,7 @@ export const tiktokBrand = async (req: Request, res: Response) => {
               const data = await scrapTiktokProfile({
                 page,
                 item: {
-                  url: `https://tiktok.com/@${handle}`,
+                  link: `https://tiktok.com/@${handle}`,
                 },
                 callback,
                 newDate,
