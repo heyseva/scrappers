@@ -2,3 +2,5 @@ node_modules
 mongo_exports
 .env
 .DS_Store
+
+dist
