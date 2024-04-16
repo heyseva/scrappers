@@ -8,7 +8,7 @@ export const tiktokBrand = async (req: Request, res: Response) => {
     const newDate = new Date().toISOString();
     await puppeteer.crawl();
     let page = await puppeteer.getPage();
-    const handle = req.params.handle;
+    const handle = req.query.handle;
     Async.waterfall(
       [
         function (callback: (arg0: null) => void) {
