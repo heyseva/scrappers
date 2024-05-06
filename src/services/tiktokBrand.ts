@@ -80,6 +80,14 @@ const scrapTiktokProfile = async ({
 
     if (title.length) {
       return {
+        isActive: true,
+        url: url,
+        scriptData,
+        createdAt: newDate,
+      };
+    } else {
+      return {
+        isActive: false,
         url: url,
         scriptData,
         createdAt: newDate,

@@ -7,6 +7,8 @@ import { tiktokProfiles } from "./services/tiktokProfiles";
 import { tiktokBrand } from "./services/tiktokBrand";
 import puppeteer from "./utils/puppeteer";
 import { Page } from "puppeteer";
+import { scrapLT } from "./services/linktree/scrapper";
+import { proxyMiddleware } from "./middlewares/proxy";
 dotenv.config();
 
 const app = express();
@@ -22,14 +24,19 @@ let page: Page;
   page = (await puppeteer.getPage()) as Page;
 })();
 
-app.get("/scrape-tiktok-profiles", (req: Request, res: Response) => {
+app.get("/scrape-tt-profiles", (req: Request, res: Response) => {
   //   scrapeLogic(res);
   tiktokProfiles();
   res.send("Scraping TikTok profiles...");
 });
 
-app.get("/scrape-brand", async (req: Request, res: Response) => {
+app.get("/scrape-tt-brand", async (req: Request, res: Response) => {
   await tiktokBrand(req, res, page);
+});
+
+app.get("/scrape-lt", async (req: Request, res: Response) => {
+  const data = await scrapLT(req);
+  res.send(data);
 });
 
 app.get("/", (req: Request, res: Response) => {
