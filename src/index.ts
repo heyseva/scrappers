@@ -7,7 +7,7 @@ import { tiktokProfiles } from "./services/tiktokProfiles";
 import { tiktokBrand } from "./services/tiktokBrand";
 import puppeteer from "./utils/puppeteer";
 import { Page } from "puppeteer";
-import { scrapLT } from "./services/linktree/scrapper";
+import { bulkScraper, scrapLT } from "./services/linktree/scrapper";
 import { proxyMiddleware } from "./middlewares/proxy";
 dotenv.config();
 
@@ -19,9 +19,11 @@ const PORT = process.env.PORT || 4000;
 
 // iffe
 let page: Page;
+let linkTreePage: Page;
 (async () => {
   await puppeteer.crawl();
   page = (await puppeteer.getPage()) as Page;
+  linkTreePage = (await puppeteer.getPage()) as Page;
 })();
 
 app.get("/scrape-tt-profiles", (req: Request, res: Response) => {
@@ -37,6 +39,11 @@ app.get("/scrape-tt-brand", async (req: Request, res: Response) => {
 app.get("/scrape-lt", async (req: Request, res: Response) => {
   const data = await scrapLT(req);
   res.send(data);
+});
+
+app.get("/bulk-scrape-lt", async (req: Request, res: Response) => {
+  bulkScraper(linkTreePage);
+  res.send("Scraping Linktree profiles...");
 });
 
 app.get("/", (req: Request, res: Response) => {

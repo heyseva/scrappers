@@ -1,6 +1,6 @@
 import * as cheerio from "cheerio";
 import type { DataNode } from "domhandler";
-import { getRequest } from "../../utils/proxyService";
+import axios from "axios";
 
 export interface ResultLink {
   title: string;
@@ -21,9 +21,9 @@ export interface FormattedResults {
   raw: any;
 }
 
-export default function Scraper(profile: string): Promise<FormattedResults> {
-  console.log("Scraping linktree profile: " + profile);
-  return getRequest("https://linktr.ee/" + profile)
+export default function Scraper(url: string): Promise<FormattedResults> {
+  return axios
+    .get(url)
     .then((response) => response.data)
     .then((responseHtml) => {
       try {
@@ -39,7 +39,7 @@ export default function Scraper(profile: string): Promise<FormattedResults> {
     });
 }
 
-function convertRawToFormattedResults(raw: any): FormattedResults {
+export const convertRawToFormattedResults = (raw: any): FormattedResults => {
   return {
     title: raw.props.pageProps.pageTitle,
     username: raw.props.pageProps.account.username,
@@ -58,4 +58,4 @@ function convertRawToFormattedResults(raw: any): FormattedResults {
     }),
     raw: raw,
   };
-}
+};

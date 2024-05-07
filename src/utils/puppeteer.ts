@@ -24,7 +24,8 @@ class puppeteerController {
 
   async crawl() {
     this.browser = await puppeteer.launch({
-      headless: true,
+      // headless: true,
+      headless: "new",
       // args: [
       //   "--disable-setuid-sandbox",
       //   "--no-sandbox",
