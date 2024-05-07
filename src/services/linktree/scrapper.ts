@@ -32,7 +32,7 @@ export const bulkScraper = async (page: Page) => {
     .db("insta-scrapper")
     .collection("input-lt-user")
     .find({
-      isActive: true,
+      active: true,
     })
     .toArray();
   Async.waterfall(

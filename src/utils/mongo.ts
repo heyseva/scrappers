@@ -15,7 +15,7 @@ const YOURS_DB: IYoursDB = {
   dev: DEV_DB,
   live: LIVE_DB,
 };
-console.log("DEV_DB------", DEV_DB);
+
 const dbConnection = async (env = "dev"): Promise<MongoClient | undefined> => {
   const options = {
     useUnifiedTopology: true,
