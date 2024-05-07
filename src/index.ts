@@ -37,7 +37,7 @@ app.get("/scrape-tt-brand", async (req: Request, res: Response) => {
 });
 
 app.get("/scrape-lt", async (req: Request, res: Response) => {
-  const data = await scrapLT(req);
+  const data = await scrapLT(req, linkTreePage);
   res.send(data);
 });
 
