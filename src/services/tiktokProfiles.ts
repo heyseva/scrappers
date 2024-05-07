@@ -95,7 +95,7 @@ const scrapTiktokProfile = async ({
 
     if (title.length) {
       (await client)
-        .db("tiktok-scrapper")
+        .db("insta-scrapper")
         .collection("scrap_tt_user")
         .insertOne({
           url: url,

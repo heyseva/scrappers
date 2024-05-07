@@ -25,10 +25,16 @@ export const scrapLT = async (req: Request) => {
 
 export const bulkScraper = async (page: Page) => {
   const client: any = await dbConnection("dev");
-  const version = "repo-0.0.1";
+  const version = `repo-${new Date().getTime()}`;
   console.log("version---", version);
 
-  const profiles: Array<{ Link: string }> = LT_DATA;
+  const profiles: Array<{ Link: string }> = await client
+    .db("insta-scrapper")
+    .collection("input-lt-user")
+    .find({
+      isActive: true,
+    })
+    .toArray();
   Async.waterfall(
     [
       function (callback: (arg0: null) => void) {
@@ -45,7 +51,7 @@ export const bulkScraper = async (page: Page) => {
               try {
                 if (result) {
                   (await client)
-                    .db("tiktok-scrapper")
+                    .db("insta-scrapper")
                     .collection("scrap-lt-user")
                     .updateOne(
                       {
@@ -70,7 +76,7 @@ export const bulkScraper = async (page: Page) => {
                   }, 10000);
                 } else {
                   (await client)
-                    .db("tiktok-scrapper")
+                    .db("insta-scrapper")
                     .collection("scrap-lt-user")
                     .updateOne(
                       {
