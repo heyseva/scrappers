@@ -1,26 +1,28 @@
-import puppeteer from "../utils/puppeteer";
 import Async from "async";
 import cheerio from "cheerio";
 import { Request, Response } from "express";
 import { Page } from "puppeteer";
 
-export const tiktokBrand = async (req: Request, res: Response, page: Page) => {
+export const tiktokVideo = async (req: Request, res: Response, page: Page) => {
   try {
     const newDate = new Date().toISOString();
-    const handle = req.query.handle;
+    let url = req.query.url as string;
+    // https://www.tiktok.com/@seraahr/video/7338119156342066464?is_from_webapp=1
+    if (!url?.includes("?is_from_webapp=1")) {
+      url = `${url}?is_from_webapp=1`.toString();
+    }
+    console.log("url----", url);
     Async.waterfall(
       [
         function (callback: (arg0: null) => void) {
           page
-            ?.goto("https://tiktok.com", {
+            ?.goto(url, {
               waitUntil: "networkidle2",
             })
             .then(async () => {
-              const data = await scrapTiktokProfile({
+              const data = await scrapTiktokVideo({
                 page,
-                item: {
-                  link: `https://tiktok.com/@${handle}`,
-                },
+                url,
                 callback,
                 newDate,
               });
@@ -42,33 +44,26 @@ export const tiktokBrand = async (req: Request, res: Response, page: Page) => {
   }
 };
 
-const scrapTiktokProfile = async ({
+const scrapTiktokVideo = async ({
   page,
-  item,
+  url,
   callback,
   newDate,
 }: {
   page: any;
-  item: any;
+  url: string;
   callback: any;
   newDate: string;
 }) => {
   try {
-    let url = item.link.includes("https") ? item.link : `https://${item.link}`;
-    await page?.goto(url, {
-      waitUntil: "networkidle2",
-    });
-    await page?.waitForTimeout(3000);
     const content = await page?.content();
     let $ = cheerio.load(content || "");
-    const title = $(`[data-e2e="user-title"]`).text();
     let scriptData: any = $('[id="__UNIVERSAL_DATA_FOR_REHYDRATION__"]').text();
     if (scriptData) {
       try {
         const obj = JSON.parse(scriptData);
-        scriptData = obj.__DEFAULT_SCOPE__["webapp.user-detail"];
+        scriptData = obj.__DEFAULT_SCOPE__["webapp.video-detail"];
       } catch (error: any) {
-        console.log();
         console.log(
           "error in parsing scriptData for:",
           url,
@@ -78,7 +73,7 @@ const scrapTiktokProfile = async ({
       }
     }
 
-    if (title.length) {
+    if (scriptData?.statusMsg === "ok" && scriptData?.itemInfo?.itemStruct) {
       return {
         isActive: true,
         url: url,
@@ -93,9 +88,6 @@ const scrapTiktokProfile = async ({
         createdAt: newDate,
       };
     }
-    setTimeout(() => {
-      callback(null);
-    }, 2000);
   } catch (error) {
     console.log("error in scrapTiktokProfile:", error);
     setTimeout(() => {

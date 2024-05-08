@@ -3,12 +3,13 @@ import { Request, Response } from "express";
 import express from "express";
 import morgan from "morgan";
 import dotenv from "dotenv";
-import { tiktokProfiles } from "./services/tiktokProfiles";
-import { tiktokBrand } from "./services/tiktokBrand";
+import { tiktokProfiles } from "./services/tiktok/tiktokProfiles";
+import { tiktokBrand } from "./services/tiktok/tiktokBrand";
 import puppeteer from "./utils/puppeteer";
 import { Page } from "puppeteer";
 import { bulkScraper, scrapLT } from "./services/linktree/scrapper";
 import { proxyMiddleware } from "./middlewares/proxy";
+import { tiktokVideo } from "./services/tiktok/video";
 dotenv.config();
 
 const app = express();
@@ -20,10 +21,12 @@ const PORT = process.env.PORT || 4000;
 // iffe
 let page: Page;
 let linkTreePage: Page;
+let tiktokPage: Page;
 (async () => {
   await puppeteer.crawl();
   page = (await puppeteer.getPage()) as Page;
   linkTreePage = (await puppeteer.getPage()) as Page;
+  tiktokPage = (await puppeteer.getPage()) as Page;
 })();
 
 app.get("/scrape-tt-profiles", (req: Request, res: Response) => {
@@ -34,6 +37,10 @@ app.get("/scrape-tt-profiles", (req: Request, res: Response) => {
 
 app.get("/scrape-tt-brand", async (req: Request, res: Response) => {
   await tiktokBrand(req, res, page);
+});
+
+app.get("/scrape-tt-video", async (req: Request, res: Response) => {
+  await tiktokVideo(req, res, page);
 });
 
 app.get("/scrape-lt", async (req: Request, res: Response) => {
