@@ -25,44 +25,44 @@ export const scrapTiktokProfile = async ({
 
     await page?.waitForTimeout(3000);
 
-    async function scrollUntilNoMoreData(page: any) {
-      let previousHeight;
-      let currentHeight = await page.evaluate(() => {
-        console.log("document----", document.querySelector);
-        return (
-          // @ts-ignore
-          document.querySelector('[data-e2e="user-post-item-list"]').children
-            ?.length
-        );
-      });
-      do {
-        console.log("previousHeight", previousHeight);
-        previousHeight = currentHeight;
-        // Scroll to the bottom of the page
-        await page.evaluate(() => {
-          // @ts-ignore
-          const divs = document.querySelector(
-            '[data-e2e="user-post-item-list"]'
-          ).children;
+    // async function scrollUntilNoMoreData(page: any) {
+    //   let previousHeight;
+    //   let currentHeight = await page.evaluate(() => {
+    //     console.log("document----", document.querySelector);
+    //     return (
+    //       // @ts-ignore
+    //       document.querySelector('[data-e2e="user-post-item-list"]').children
+    //         ?.length
+    //     );
+    //   });
+    //   do {
+    //     console.log("previousHeight", previousHeight);
+    //     previousHeight = currentHeight;
+    //     // Scroll to the bottom of the page
+    //     await page.evaluate(() => {
+    //       // @ts-ignore
+    //       const divs = document.querySelector(
+    //         '[data-e2e="user-post-item-list"]'
+    //       ).children;
 
-          divs[divs.length - 1].scrollIntoView({
-            behavior: "smooth",
-            block: "start",
-          });
-        });
-        // Wait for the page to load more data
-        await page.waitForTimeout(5000);
-        currentHeight = await page.evaluate(
-          () =>
-            // @ts-ignore
-            document.querySelector('[data-e2e="user-post-item-list"]').children
-              ?.length
-        );
-      } while (previousHeight !== currentHeight && previousHeight < 200);
-    }
+    //       divs[divs.length - 1].scrollIntoView({
+    //         behavior: "smooth",
+    //         block: "start",
+    //       });
+    //     });
+    //     // Wait for the page to load more data
+    //     await page.waitForTimeout(5000);
+    //     currentHeight = await page.evaluate(
+    //       () =>
+    //         // @ts-ignore
+    //         document.querySelector('[data-e2e="user-post-item-list"]').children
+    //           ?.length
+    //     );
+    //   } while (previousHeight !== currentHeight && previousHeight < 200);
+    // }
 
-    // Call the function to scroll until no more data can be loaded
-    await scrollUntilNoMoreData(page);
+    // // Call the function to scroll until no more data can be loaded
+    // await scrollUntilNoMoreData(page);
 
     await page?.waitForTimeout(3000);
     const content = await page?.content();
@@ -115,7 +115,7 @@ export const scrapTiktokProfile = async ({
         .db("insta-scrapper")
         .collection("scrap_tt_user")
         .insertOne({
-          url: url,
+          tt_url: url,
           scriptData,
           createdAt: newDate,
         });
@@ -126,17 +126,15 @@ export const scrapTiktokProfile = async ({
       if (title.length) {
         return {
           isActive: true,
-          url: url,
+          tt_url: url,
           scriptData,
-          createdAt: newDate,
           postUrls: Array.from(postUrls),
         };
       } else {
         return {
           isActive: false,
-          url: url,
+          tt_url: url,
           scriptData,
-          createdAt: newDate,
           postUrls: Array.from(postUrls),
         };
       }

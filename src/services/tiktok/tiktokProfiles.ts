@@ -2,17 +2,32 @@ import dbConnection from "../../utils/mongo";
 import puppeteer from "../../utils/puppeteer";
 import Async from "async";
 import { scrapTiktokProfile } from "./common";
+import { MongoClient, ObjectId } from "mongodb";
 
 export const tiktokProfiles = async () => {
   try {
     const newDate = new Date().toISOString();
     await puppeteer.crawl();
     let page = await puppeteer.getPage();
-    const client: any = await dbConnection("dev");
+    const client = (await dbConnection("dev")) as MongoClient;
+    // const live_client = (await dbConnection("live")) as MongoClient;
 
-    const INSTA: any = [];
+    const profiles: any = await client
+      ?.db("insta-scrapper")
+      .collection("scrap-ig-user")
+      .aggregate([
+        {
+          $match: {
+            tt_link: { $exists: true },
+            tt_data: { $exists: false },
+          },
+        },
+      ])
+      .toArray();
 
-    if (INSTA.length) {
+    console.log("profiles", profiles.length);
+
+    if (profiles.length) {
       Async.waterfall(
         [
           function (callback: (arg0: null) => void) {
@@ -26,16 +41,53 @@ export const tiktokProfiles = async () => {
                 }, 30000);
               });
           },
-          ...INSTA.map(
+          ...profiles.map(
             (x: any, i: number) =>
               function (callback: any) {
-                console.log("processing:", i, x._id, x.link);
+                const ig_link = x.link;
+                const link = x.tt_link;
+                console.log("fetching:", i, ":", { link, ig_link });
                 scrapTiktokProfile({
                   page,
-                  item: x,
+                  item: { link: link },
                   callback,
-                  client,
                   newDate,
+                }).then((result: any) => {
+                  if (
+                    result
+                    // &&
+                    // result?.reels?.length > 0 &&
+                    // result.data
+                  ) {
+                    client
+                      .db("insta-scrapper")
+                      .collection("scrap-ig-user")
+                      .updateOne(
+                        {
+                          _id: x._id,
+                        },
+                        {
+                          $set: {
+                            tt_data: result,
+                            active: true,
+                          },
+                        },
+                        {
+                          upsert: true,
+                        }
+                      )
+                      .then(() => {
+                        setTimeout(() => {
+                          console.log("done processing: ", i);
+                          callback(null);
+                        }, 5000);
+                      });
+                  } else {
+                    setTimeout(() => {
+                      console.log("done processing: ", i);
+                      callback(null);
+                    }, 5000);
+                  }
                 });
               }
           ),
@@ -44,7 +96,7 @@ export const tiktokProfiles = async () => {
           if (err) {
             console.log("error", err);
           } else {
-            console.log("done");
+            console.log("All data fetched and saved in db");
           }
         }
       );

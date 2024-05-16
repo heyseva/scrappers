@@ -2,6 +2,11 @@ import path from "path";
 import fs from "fs";
 import axios from "axios";
 import AWS from "aws-sdk";
+import {
+  AWS_ACCESS_KEY_ID,
+  AWS_REGION,
+  AWS_SECRET_ACCESS_KEY,
+} from "../utils/env";
 
 export async function downloadImage(
   url: string,
@@ -10,9 +15,9 @@ export async function downloadImage(
 ) {
   // Configure AWS SDK
   AWS.config.update({
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY,
-    region: process.env.AWS_REGION,
+    accessKeyId: AWS_ACCESS_KEY_ID,
+    secretAccessKey: AWS_SECRET_ACCESS_KEY,
+    region: AWS_REGION,
   });
 
   const s3 = new AWS.S3();
@@ -31,6 +36,7 @@ export async function downloadImage(
 
     const uploadResult = await s3.upload(uploadParams).promise();
     console.log(`Image uploaded to S3: ${uploadResult.Location}`);
+    return uploadResult.Location;
   } catch (error) {
     console.error("Error downloading or uploading the image:", error);
   }

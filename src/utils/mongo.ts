@@ -3,9 +3,7 @@ import {
   MongoClientOptions,
   MongoServerSelectionError,
 } from "mongodb";
-
-const DEV_DB: string = process.env.DEV_DB || "mongodb://localhost:27017";
-const LIVE_DB: string = process.env.LIVE_DB || "";
+import { DEV_DB, LIVE_DB } from "./env";
 
 interface IYoursDB {
   [key: string]: string;

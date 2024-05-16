@@ -3,6 +3,7 @@ import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import RecaptchaPlugin from "puppeteer-extra-plugin-recaptcha";
 import AnonymizeUAPlugin from "puppeteer-extra-plugin-anonymize-ua";
+import { NODE_ENV, PUPPETEER_EXECUTABLE_PATH } from "./env";
 
 // Use the stealth plugin to avoid detection
 puppeteer.use(StealthPlugin());
@@ -33,8 +34,8 @@ class puppeteerController {
       //   "--no-zygote",
       // ],
       executablePath:
-        process.env.NODE_ENV === "production"
-          ? process.env.PUPPETEER_EXECUTABLE_PATH
+        NODE_ENV === "production"
+          ? PUPPETEER_EXECUTABLE_PATH
           : puppeteer.executablePath(),
     });
     console.log("Browser launched.");
@@ -46,20 +47,23 @@ class puppeteerController {
     // Wait for creating the new page.
   }
 
-  async login(username: string, password: string) {
-    if (this.page) {
-      await this.page.waitForSelector('input[name="username"]');
-      await this.page.type('input[name="username"]', username, {
+  async login(username: string, password: string, page: puppeteerCore.Page) {
+    if (page) {
+      await page.goto("https://www.instagram.com/accounts/login/", {
+        waitUntil: "networkidle2",
+      });
+      await page.waitForSelector('input[name="username"]');
+      await page.type('input[name="username"]', username, {
         delay: 50,
       });
-      await this.page.type('input[name="password"]', password, {
+      await page.type('input[name="password"]', password, {
         delay: 50,
       });
-      await this.page.click('button[type="submit"]');
-      await this.page?.waitForTimeout(5000);
+      await page.click('button[type="submit"]');
+      await page?.waitForTimeout(5000);
       // Solve the reCAPTCHA challenge
       // await this.page.solveRecaptchas();
-      await this.page.waitForNavigation({ waitUntil: "networkidle2" });
+      await page.waitForNavigation({ waitUntil: "networkidle2" });
       // await this.page?.waitForTimeout(10000);
       console.log("Insta Login success.");
     }
