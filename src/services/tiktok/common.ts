@@ -65,6 +65,26 @@ export const scrapTiktokProfile = async ({
     // await scrollUntilNoMoreData(page);
 
     await page?.waitForTimeout(3000);
+
+    const targetElement: any = document.querySelector(
+      '[data-e2e="user-post-item-list"]'
+    );
+
+    if (!targetElement) {
+      console.error("Target element not found.");
+    } else {
+      // Calculate the total height of the target element, including overflow
+      var totalHeight = targetElement.scrollHeight + window.innerHeight; // Adding window.innerHeight ensures we calculate the full height including potential vertical scrollbar
+
+      // Calculate the final scroll position: the bottom of the target element plus an extra 100px
+      var finalScrollPosition = totalHeight + 100;
+
+      // Smoothly scroll to the final position
+      window.scrollTo({ top: finalScrollPosition, behavior: "smooth" });
+
+      await page?.waitForTimeout(3000);
+    }
+
     const content = await page?.content();
     let $ = cheerio.load(content || "");
     const title = $(`[data-e2e="user-title"]`).text();

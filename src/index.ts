@@ -15,6 +15,7 @@ import { instagamPosts } from "./services/instagram/posts";
 import { instagamAllProfiles } from "./services/instagram/allProfiles";
 import { calculateIGEngagementRateRange } from "./services/instagram/calculateEngagementRate";
 import { INSTAGRAM_PASSWORD, INSTAGRAM_USERNAME, PORT } from "./utils/env";
+import { tiktokAllPosts } from "./services/tiktok/allposts";
 
 const app = express();
 
@@ -50,6 +51,11 @@ app.get("/scrape-tt-video", async (req: Request, res: Response) => {
   await tiktokVideo(req, res, page);
 });
 
+app.get("/scrape-tt-posts", async (req: Request, res: Response) => {
+  tiktokAllPosts(tiktokPage);
+  res.send("Scraping Linktree profiles...");
+});
+
 app.get("/scrape-lt", async (req: Request, res: Response) => {
   const data = await scrapLT(req, linkTreePage);
   res.send(data);
@@ -65,7 +71,8 @@ app.get("/scrap-ig-profile", async (req: Request, res: Response) => {
 });
 
 app.get("/scrap-ig-followings", async (req: Request, res: Response) => {
-  await instagamFollowings(req, res, instagramPage);
+  instagamFollowings(req, res, instagramPage);
+  res.send("Scraping instagram profiles...");
 });
 
 app.get("/scrap-ig-posts", async (req: Request, res: Response) => {

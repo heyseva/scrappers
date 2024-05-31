@@ -195,20 +195,20 @@ export const scrapIGfollowings = async ({
       };
     });
 
-    callback(null, bulkOps);
+    // callback(null, bulkOps);
 
-    // client
-    //   .db("tiktok-scrapper")
-    //   .collection("instagramFollowers")
-    //   .bulkWrite(bulkOps)
-    //   .then((result) => {
-    //     console.log("Bulk write operation completed:", result);
-    //     callback(null);
-    //   })
-    //   .catch((error) => {
-    //     console.error("Error occurred during bulk write operation:", error);
-    //     callback(error);
-    //   });
+    client
+      .db("insta-scrapper")
+      .collection("scrap-ig-followers")
+      .bulkWrite(bulkOps)
+      .then((result) => {
+        console.log("Bulk write operation completed:", result);
+        callback(null);
+      })
+      .catch((error) => {
+        console.error("Error occurred during bulk write operation:", error);
+        callback(error);
+      });
   } catch (error: any) {
     console.log("error in scrapInstagramFollowings:", error?.message);
     callback(null);

@@ -13,34 +13,71 @@ export const instagamFollowings = async (
   try {
     const client = (await dbConnection("dev")) as MongoClient;
     const newDate = new Date().toISOString();
-    let url = req.query.url as string;
+    let urls = [req.query.url as string];
+
     Async.waterfall(
       [
-        function (callback: (arg0: null) => void) {
-          try {
-            scrapIGfollowings({
-              page,
-              item: { link: url },
-              callback,
-              client,
+        function (mainCallback: (arg0: null) => void) {
+          page
+            ?.goto("https://instagram.com", {
+              waitUntil: "networkidle2",
             })
-              .then()
-              .catch((error) => {
-                console.log("error----", error);
-                callback(null);
-              });
-          } catch (error) {
-            console.log("error----", error);
-            callback(null);
-          }
+            .then(() => {
+              setTimeout(() => {
+                mainCallback(null);
+              }, 20000);
+            });
         },
+        ...urls.map(
+          (profile: any, i: number) =>
+            function (mainCallback: any) {
+              const ig_link = profile;
+              const link = profile;
+              console.log("fetching:", i, ":", { link, ig_link });
+
+              Async.waterfall(
+                [
+                  function (callback: (arg0: null) => void) {
+                    try {
+                      scrapIGfollowings({
+                        page,
+                        item: { link },
+                        callback,
+                        client,
+                      })
+                        .then()
+                        .catch((error) => {
+                          console.log("error----", error);
+                          setTimeout(() => {
+                            callback(null);
+                          }, 20000);
+                        });
+                    } catch (error) {
+                      console.log("error----", error);
+                      setTimeout(() => {
+                        callback(null);
+                      }, 20000);
+                    }
+                  },
+                ],
+                function (err, result) {
+                  if (err) {
+                    console.log("error----", err);
+                  } else {
+                    console.log("done", result);
+                    // res.send(result);
+                    mainCallback(null);
+                  }
+                }
+              );
+            }
+        ),
       ],
       function (err, result) {
         if (err) {
-          console.log("error----", err);
+          console.log("error", err);
         } else {
-          console.log("done");
-          res.send(result);
+          console.log("All data fetched and saved in db");
         }
       }
     );

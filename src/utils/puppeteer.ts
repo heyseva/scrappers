@@ -25,18 +25,22 @@ class puppeteerController {
 
   async crawl() {
     this.browser = await puppeteer.launch({
-      // headless: false,
-      headless: "new",
+      headless: NODE_ENV === "development" ? false : "new",
       // args: [
       //   "--disable-setuid-sandbox",
       //   "--no-sandbox",
       //   "--single-process",
       //   "--no-zygote",
       // ],
+      // args: ["--no-sandbox", "--disabled-setupid-sandbox"],
+      // NODE_ENV === "production"
+      //   ? PUPPETEER_EXECUTABLE_PATH
+      //   : puppeteer.executablePath(),
+
       executablePath:
-        NODE_ENV === "production"
-          ? PUPPETEER_EXECUTABLE_PATH
-          : puppeteer.executablePath(),
+        NODE_ENV === "development"
+          ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+          : PUPPETEER_EXECUTABLE_PATH,
     });
     console.log("Browser launched.");
 

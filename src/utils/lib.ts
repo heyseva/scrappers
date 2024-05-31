@@ -105,7 +105,7 @@ function calculateConfidenceInterval(
   stdDev: number,
   N: number
 ): [number, number] {
-  const marginOfError = 1.96 * (stdDev / (sqrt(N) as number));
+  const marginOfError = 0.95 * (stdDev / (sqrt(N) as number));
   return [meanEr - marginOfError, meanEr + marginOfError];
 }
 
@@ -128,6 +128,8 @@ export const calculateEngagementRateRange = ({
     return calculateEngagementRate(like, comments[index], followers);
   });
 
+  console.log("engagementRates:--- ", engagementRates);
+
   const meanEr: number = calculateMeanEngagementRate(engagementRates);
   const stdDev: number = calculateStandardDeviation(engagementRates, meanEr);
 
@@ -136,6 +138,8 @@ export const calculateEngagementRateRange = ({
     stdDev,
     engagementRates.length
   );
+
+  console.log("confidenceInterval:--- ", confidenceInterval);
 
   const engRangeRate = `${confidenceInterval[0].toFixed(
     2

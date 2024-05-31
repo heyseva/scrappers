@@ -8,7 +8,11 @@
     "build": "tsc -b",
     "start": "node dist/index.js",
     "dev": "ts-node src/index.ts",
-    "dev:er": "ts-node src/utils/engagementRate.ts"
+    "dever": "ts-node src/services/instagram/calculateEngagementRate.ts",
+    "devgr": "ts-node src/services/instagram/calculateFollowingsGrowthRate.ts",
+    "devup": "ts-node src/services/instagram/updateDev.ts",
+    "ttpost": "ts-node src/services/tiktok/allposts.ts",
+    "ttsession": "ts-node src/services/tiktok/userSession.ts"
   },
   "keywords": [],
   "author": "",
@@ -23,6 +27,7 @@
     "bignumber.js": "^9.1.2",
     "cheerio": "1.0.0-rc.12",
     "csvtojson": "^2.0.10",
+    "dayjs": "^1.11.11",
     "dotenv": "^16.0.3",
     "express": "^4.18.2",
     "fs": "0.0.1-security",

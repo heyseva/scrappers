@@ -44,7 +44,7 @@ export const tiktokVideo = async (req: Request, res: Response, page: Page) => {
   }
 };
 
-const scrapTiktokVideo = async ({
+export const scrapTiktokVideo = async ({
   page,
   url,
   callback,
