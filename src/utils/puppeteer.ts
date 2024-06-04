@@ -3,7 +3,7 @@ import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 import RecaptchaPlugin from "puppeteer-extra-plugin-recaptcha";
 import AnonymizeUAPlugin from "puppeteer-extra-plugin-anonymize-ua";
-import { NODE_ENV, PUPPETEER_EXECUTABLE_PATH } from "./env";
+import { NODE_ENV } from "./env";
 
 // Use the stealth plugin to avoid detection
 puppeteer.use(StealthPlugin());
@@ -25,8 +25,8 @@ class puppeteerController {
 
   async crawl() {
     this.browser = await puppeteer.launch({
-      headless: NODE_ENV === "development" ? false : "new",
-      // headless: "new",
+      // headless: NODE_ENV === "development" ? false : "new",
+      headless: "new",
       // args: [
       //   "--disable-setuid-sandbox",
       //   "--no-sandbox",
@@ -41,7 +41,7 @@ class puppeteerController {
       executablePath:
         NODE_ENV === "development"
           ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-          : PUPPETEER_EXECUTABLE_PATH,
+          : "/usr/bin/google-chrome",
     });
     console.log("Browser launched.");
 
