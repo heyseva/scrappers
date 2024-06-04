@@ -101,9 +101,11 @@ export const handleStartSession = async (
 ) => {
   console.log("Starting session...", page);
   page.on("response", async (response) => {
+    console.log("reload url-------", await page.url());
     if (response.url().includes("passport/web/get_qrcode")) {
       try {
         const responseBody = await response.text();
+        console.log("responseBody------");
         wss.clients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
             client.send(responseBody);
@@ -128,11 +130,13 @@ export const handleStartSession = async (
   await page.goto("https://www.tiktok.com/login/qrcode");
 
   setTimeout(async () => {
+    console.log("reloading-----");
     await page.reload();
   }, 60000);
 
   page.on("framenavigated", async (frame) => {
     const url = frame.url();
+    console.log("reload url-------", url);
     if (url.includes("https://www.tiktok.com/foryou")) {
       ws.send("User successfully logged in!");
       await page.waitForNavigation();
