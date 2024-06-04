@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 import { Request, Response, Application } from "express";
-import { createServer } from "https";
+import { createServer } from "http";
 import express from "express";
 import morgan from "morgan";
 import { tiktokProfiles } from "./services/tiktok/tiktokProfiles";
