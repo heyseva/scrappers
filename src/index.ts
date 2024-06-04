@@ -15,7 +15,7 @@ import { instagamFollowings } from "./services/instagram/followers";
 import { instagamPosts } from "./services/instagram/posts";
 import { instagamAllProfiles } from "./services/instagram/allProfiles";
 import { calculateIGEngagementRateRange } from "./services/instagram/calculateEngagementRate";
-import { INSTAGRAM_PASSWORD, INSTAGRAM_USERNAME, PORT } from "./utils/env";
+import { INSTAGRAM_PASSWORD, INSTAGRAM_USERNAME } from "./utils/env";
 import { tiktokAllPosts } from "./services/tiktok/allposts";
 import {
   createLoginSession,
@@ -25,6 +25,8 @@ import {
 import WebSocket, { WebSocketServer } from "ws";
 import dbConnection from "./utils/mongo";
 import { MongoClient } from "mongodb";
+
+const PORT = 4001;
 
 const app: Application = express();
 
