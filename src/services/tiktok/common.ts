@@ -1,6 +1,6 @@
 import cheerio from "cheerio";
 import { MongoClient } from "mongodb";
-import { downloadImage } from "../../helper/images";
+import { downloadImage, downloadImageLocal } from "../../helper/images";
 
 export const scrapTiktokProfile = async ({
   page,
@@ -64,25 +64,22 @@ export const scrapTiktokProfile = async ({
     // // Call the function to scroll until no more data can be loaded
     // await scrollUntilNoMoreData(page);
 
-    await page?.waitForTimeout(3000);
-
-    const targetElement: any = document.querySelector(
-      '[data-e2e="user-post-item-list"]'
-    );
+    const targetElement = await page.$('[data-e2e="user-post-item-list"]');
 
     if (!targetElement) {
       console.error("Target element not found.");
     } else {
-      // Calculate the total height of the target element, including overflow
-      var totalHeight = targetElement.scrollHeight + window.innerHeight; // Adding window.innerHeight ensures we calculate the full height including potential vertical scrollbar
+      await page.evaluate(() => {
+        window.scrollTo({ top: 20000, left: 0, behavior: "smooth" });
+      });
 
-      // Calculate the final scroll position: the bottom of the target element plus an extra 100px
-      var finalScrollPosition = totalHeight + 100;
+      await page?.waitForTimeout(5000);
 
-      // Smoothly scroll to the final position
-      window.scrollTo({ top: finalScrollPosition, behavior: "smooth" });
+      await page.evaluate(() => {
+        window.scrollTo({ top: 20000, left: 0, behavior: "smooth" });
+      });
 
-      await page?.waitForTimeout(3000);
+      await page?.waitForTimeout(5000);
     }
 
     const content = await page?.content();
@@ -98,10 +95,11 @@ export const scrapTiktokProfile = async ({
           try {
             const userProfileImage = scriptData.userInfo.user.avatarThumb;
             userProfileImage &&
-              (await downloadImage(
+              (await downloadImageLocal(
                 userProfileImage,
-                `${item.handle}.png`,
-                "tt-profile-images"
+                `${item.link.replace("https://tiktok.com/", "").trim()}.png`,
+                // "tt-profile-images"
+                "../downloads"
               ));
           } catch (error: any) {
             console.log("error in downloading image:", error.message);

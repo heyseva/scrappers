@@ -41,3 +41,26 @@ export async function downloadImage(
     console.error("Error downloading or uploading the image:", error);
   }
 }
+
+export async function downloadImageLocal(
+  url: string,
+  filename: string,
+  filePath: string = "../downloads"
+) {
+  try {
+    console.log(`Downloading image from: ${url}, filename: ${filename}`);
+    const downloadDirectory = path.join(__dirname, filePath);
+    const imageFileName = path.basename(filename);
+
+    // Full path to save the image
+    const imagePath = path.join(downloadDirectory, imageFileName);
+    console.log("imagePath", imagePath);
+    const response = await axios.get(url, { responseType: "arraybuffer" });
+
+    fs.writeFileSync(imagePath, response.data);
+
+    console.log(`Image downloaded and saved to: ${imagePath}`);
+  } catch (error) {
+    console.error("Error downloading the image:", error);
+  }
+}

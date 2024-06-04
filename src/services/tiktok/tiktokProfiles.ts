@@ -3,6 +3,7 @@ import puppeteer from "../../utils/puppeteer";
 import Async from "async";
 import { scrapTiktokProfile } from "./common";
 import { MongoClient, ObjectId } from "mongodb";
+import { users } from "./constant";
 
 export const tiktokProfiles = async () => {
   try {
@@ -12,18 +13,20 @@ export const tiktokProfiles = async () => {
     const client = (await dbConnection("dev")) as MongoClient;
     // const live_client = (await dbConnection("live")) as MongoClient;
 
-    const profiles: any = await client
-      ?.db("insta-scrapper")
-      .collection("scrap-ig-user")
-      .aggregate([
-        {
-          $match: {
-            tt_link: { $exists: true },
-            tt_data: { $exists: false },
-          },
-        },
-      ])
-      .toArray();
+    // const profiles: any = await client
+    //   ?.db("insta-scrapper")
+    //   .collection("scrap-ig-user")
+    //   .aggregate([
+    //     {
+    //       $match: {
+    //         tt_link: { $exists: true },
+    //         tt_data: { $exists: false },
+    //       },
+    //     },
+    //   ])
+    //   .toArray();
+
+    const profiles: any = users;
 
     console.log("profiles", profiles.length);
 
@@ -37,8 +40,9 @@ export const tiktokProfiles = async () => {
               })
               .then(() => {
                 setTimeout(() => {
+                  console.log("Starting......");
                   callback(null);
-                }, 30000);
+                }, 10000);
               });
           },
           ...profiles.map(
@@ -52,6 +56,7 @@ export const tiktokProfiles = async () => {
                   item: { link: link },
                   callback,
                   newDate,
+                  allowImageDownload: true,
                 }).then((result: any) => {
                   if (
                     result
@@ -64,11 +69,13 @@ export const tiktokProfiles = async () => {
                       .collection("scrap-ig-user")
                       .updateOne(
                         {
-                          _id: x._id,
+                          // _id: x._id,
+                          link: link,
                         },
                         {
                           $set: {
                             tt_data: result,
+                            version: "mbb-june-24",
                             active: true,
                           },
                         },

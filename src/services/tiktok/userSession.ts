@@ -24,8 +24,28 @@ async function loginAndSaveSession(
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
 
-  await page.goto("https://www.tiktok.com/login/phone-or-email/email", {
+  // Enable request interception
+  await page.setRequestInterception(true);
+  await page.goto("https://www.tiktok.com/login/qrcode", {
     waitUntil: "networkidle2",
+  });
+
+  // Listen for requests
+  page.on("request", (request) => {
+    if (request.url().includes("passport/web/get_qrcode")) {
+      // Get current timestamp and add 10 minutes
+      const expiryTimestamp = Math.floor(Date.now() / 1000) + 10 * 60;
+
+      // Update headers or URL parameters with the new expiry timestamp
+      const headers = request.headers();
+      headers["expiry-time"] = expiryTimestamp.toString();
+
+      request.continue({
+        headers: headers,
+      });
+    } else {
+      request.continue();
+    }
   });
 
   //   await page.goto("https://www.tiktok.com/login/qrcode", {
@@ -33,13 +53,13 @@ async function loginAndSaveSession(
   //   });
 
   // Assuming TikTok uses input selectors for username and password
-  await page.type('input[name="username"]', username, {
-    delay: 50,
-  });
-  await page.type('input[autocomplete="new-password"]', password, {
-    delay: 50,
-  });
-  await page.click('button[data-e2e="login-button"]');
+  // await page.type('input[name="username"]', username, {
+  //   delay: 50,
+  // });
+  // await page.type('input[autocomplete="new-password"]', password, {
+  //   delay: 50,
+  // });
+  // await page.click('button[data-e2e="login-button"]');
 
   await page?.waitForTimeout(60000 * 5);
 
@@ -52,7 +72,7 @@ async function loginAndSaveSession(
 
   await page.waitForNavigation();
 
-  await page?.waitForTimeout(5000);
+  // await page?.waitForTimeout(5000);
 
   // Store session cookies
   const cookies = await page.cookies();

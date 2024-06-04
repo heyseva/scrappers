@@ -23,7 +23,7 @@ export const instagamAllProfiles = async (
   page: Page
 ) => {
   try {
-    const version = req.query.version || `seva-nashville`;
+    const version = `mbb-june-24`;
     // const version = req.query.version || `seva-01`;
     const client = (await dbConnection("dev")) as MongoClient;
     const live_client = (await dbConnection("live")) as MongoClient;
@@ -31,7 +31,8 @@ export const instagamAllProfiles = async (
     const list = await client
       .db("insta-scrapper")
       .collection("scrap-ig-user")
-      .find({ version: "seva-01", data: { $exists: false } })
+      // .find({ version: "seva-01", data: { $exists: false } })
+      .find({ version: "mbb-june-24" })
       // 2876
       .toArray();
 
@@ -44,9 +45,7 @@ export const instagamAllProfiles = async (
     const profiles = list.map((x) => ({
       ...x,
       influencer: {
-        ig_link: x.link.includes("https://instagram.com")
-          ? x.link
-          : `https://instagram.com${x.link}`,
+        ig_link: x.ig_link,
       },
     }));
 
@@ -124,14 +123,14 @@ export const instagamAllProfiles = async (
                           .collection("scrap-ig-user")
                           .updateOne(
                             {
-                              link: link,
+                              ig_link: link,
                             },
                             {
                               $set: {
                                 user: x.user,
                                 data: result,
                                 active: true,
-                                version: version,
+                                // version: version,
                               },
                             },
                             {
@@ -156,7 +155,7 @@ export const instagamAllProfiles = async (
                             {
                               $set: {
                                 active: false,
-                                version: version,
+                                // version: version,
                               },
                             },
                             {
@@ -202,7 +201,7 @@ export const instagamAllProfiles = async (
 export const getDiscovery = async ({ username }: { username: string }) => {
   try {
     const data = await axios.get(
-      `https://app.api.heyseva.com/instagram/discovery-search?handle=${username}`
+      `https://dev.api.heyseva.com/instagram/discovery-search?handle=${username}`
     );
     return data.data;
   } catch (error) {

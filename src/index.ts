@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
-import { Request, Response } from "express";
+import { Request, Response, Application } from "express";
+import { createServer } from "http";
 import express from "express";
 import morgan from "morgan";
 import { tiktokProfiles } from "./services/tiktok/tiktokProfiles";
@@ -16,10 +17,20 @@ import { instagamAllProfiles } from "./services/instagram/allProfiles";
 import { calculateIGEngagementRateRange } from "./services/instagram/calculateEngagementRate";
 import { INSTAGRAM_PASSWORD, INSTAGRAM_USERNAME, PORT } from "./utils/env";
 import { tiktokAllPosts } from "./services/tiktok/allposts";
+import {
+  createLoginSession,
+  handleStartSession,
+} from "./services/tiktok/newUserSession";
 
-const app = express();
+import WebSocket, { WebSocketServer } from "ws";
 
-app.use(morgan("dev"));
+const app: Application = express();
+
+// Create an HTTP server
+const server = createServer(app);
+
+// Create a WebSocket server
+const wss = new WebSocketServer({ server });
 
 // iffe
 let page: Page;
@@ -33,9 +44,45 @@ let instagramPage: Page;
   linkTreePage = (await puppeteer.getPage()) as Page;
   tiktokPage = (await puppeteer.getPage()) as Page;
   instagramPage = (await puppeteer.getPage()) as Page;
+
+  // Handle WebSocket connections
+  wss.on("connection", (ws: WebSocket) => {
+    console.log("Client connected");
+
+    // Handle messages from clients
+    ws.on("message", async (message: string) => {
+      console.log(`Received message: ${message}`);
+
+      // // Broadcast message to all clients
+      // wss.clients.forEach((client) => {
+      //   if (client.readyState === WebSocket.OPEN) {
+      //     client.send(message);
+      //   }
+      // });
+      console.log(message, message === "start-session");
+      // if (message === "start-session") {
+      await handleStartSession(ws, wss, tiktokPage);
+      // }
+    });
+
+    // Handle client disconnection
+    ws.on("close", () => {
+      console.log("Client disconnected");
+    });
+
+    // Send a welcome message to the client
+    ws.send("Welcome to the WebSocket server!");
+  });
+})();
+
+app.use(morgan("dev"));
+
+app.get("/ig-login", async (req: Request, res: Response) => {
   await instagramPage.waitForTimeout(2000);
   await puppeteer.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD, instagramPage);
-})();
+  await instagramPage.waitForTimeout(2000);
+  res.send("Logged in to Instagram...");
+});
 
 app.get("/scrape-tt-profiles", (req: Request, res: Response) => {
   //   scrapeLogic(res);
@@ -54,6 +101,12 @@ app.get("/scrape-tt-video", async (req: Request, res: Response) => {
 app.get("/scrape-tt-posts", async (req: Request, res: Response) => {
   tiktokAllPosts(tiktokPage);
   res.send("Scraping Linktree profiles...");
+});
+
+app.get("/tt-session", async (req: Request, res: Response) => {
+  console.log("Creating new tiktok session...");
+  const newTiktokPage = (await puppeteer.getPage()) as Page;
+  await createLoginSession(newTiktokPage, res, wss);
 });
 
 app.get("/scrape-lt", async (req: Request, res: Response) => {
@@ -89,10 +142,11 @@ app.get("/scrape-ig-eng", async (req: Request, res: Response) => {
   res.send("calculating engagement rate for instagram profiles...");
 });
 
-app.get("/", (req: Request, res: Response) => {
-  res.send("Render Puppeteer server is up and running!");
+app.get("/scrape-ig-eng", async (req: Request, res: Response) => {
+  calculateIGEngagementRateRange(req, res);
+  res.send("calculating engagement rate for instagram profiles...");
 });
 
-app.listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Listening on port ${PORT}`);
 });

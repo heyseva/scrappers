@@ -11,8 +11,7 @@
     "dever": "ts-node src/services/instagram/calculateEngagementRate.ts",
     "devgr": "ts-node src/services/instagram/calculateFollowingsGrowthRate.ts",
     "devup": "ts-node src/services/instagram/updateDev.ts",
-    "ttpost": "ts-node src/services/tiktok/allposts.ts",
-    "ttsession": "ts-node src/services/tiktok/userSession.ts"
+    "ttpost": "ts-node src/services/tiktok/allposts.ts"
   },
   "keywords": [],
   "author": "",
@@ -44,10 +43,12 @@
     "puppeteer-extra-plugin-recaptcha": "^3.6.8",
     "puppeteer-extra-plugin-stealth": "^2.11.2",
     "ts-node": "^10.9.1",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "ws": "^8.17.0"
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/morgan": "^1.9.9"
+    "@types/morgan": "^1.9.9",
+    "@types/ws": "^8.5.10"
   }
 }
