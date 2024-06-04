@@ -52,33 +52,37 @@ let instagramPage: Page;
   const client = (await dbConnection("dev")) as MongoClient;
 
   // Handle WebSocket connections
-  wss.on("connection", (ws: WebSocket) => {
-    console.log("Client connected");
+  wss
+    .on("connection", (ws: WebSocket) => {
+      console.log("Client connected");
 
-    // Handle messages from clients
-    ws.on("message", async (message: string) => {
-      console.log(`Received message: ${message}`);
+      // Handle messages from clients
+      ws.on("message", async (message: string) => {
+        console.log(`Received message: ${message}`);
 
-      // // Broadcast message to all clients
-      // wss.clients.forEach((client) => {
-      //   if (client.readyState === WebSocket.OPEN) {
-      //     client.send(message);
-      //   }
-      // });
-      const data = message.split(":");
-      if (data[0] === "start-session") {
-        await handleStartSession(ws, wss, tiktokPage, client, data[1]);
-      }
+        // // Broadcast message to all clients
+        // wss.clients.forEach((client) => {
+        //   if (client.readyState === WebSocket.OPEN) {
+        //     client.send(message);
+        //   }
+        // });
+        const data = message.split(":");
+        if (data[0] === "start-session") {
+          await handleStartSession(ws, wss, tiktokPage, client, data[1]);
+        }
+      });
+
+      // Handle client disconnection
+      ws.on("close", () => {
+        console.log("Client disconnected");
+      });
+
+      // Send a welcome message to the client
+      ws.send("Welcome to the WebSocket server!");
+    })
+    .on("error", (error) => {
+      console.log("error-------", error);
     });
-
-    // Handle client disconnection
-    ws.on("close", () => {
-      console.log("Client disconnected");
-    });
-
-    // Send a welcome message to the client
-    ws.send("Welcome to the WebSocket server!");
-  });
 })();
 
 app.use(morgan("dev"));
