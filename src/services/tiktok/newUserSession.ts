@@ -3,6 +3,8 @@
 import { Page } from "puppeteer";
 import { Request, Response } from "express";
 import { Server, WebSocket } from "ws";
+import dbConnection from "../../utils/mongo";
+import { MongoClient } from "mongodb";
 
 // (async () => {
 //   const browser = await puppeteer.launch({ headless: false });
@@ -90,19 +92,33 @@ export const createLoginSession = async (
   await page.goto("https://www.tiktok.com/login/qrcode");
 };
 
-export const handleStartSession = async (ws: any, wss: Server, page: Page) => {
+export const handleStartSession = async (
+  ws: any,
+  wss: Server,
+  page: Page,
+  client: MongoClient,
+  username: string
+) => {
   console.log("Starting session...", page);
   page.on("response", async (response) => {
     if (response.url().includes("passport/web/get_qrcode")) {
       try {
         const responseBody = await response.text();
-        console.log("Intercepted response:", responseBody);
         wss.clients.forEach((client) => {
           if (client.readyState === WebSocket.OPEN) {
             client.send(responseBody);
           }
         });
         // Modify response if needed
+      } catch (error) {
+        console.error("Error reading response:", error);
+      }
+    } else if (response.url().includes("passport/web/check_qrconnect")) {
+      try {
+        const responseBody = await response.json();
+        if (responseBody.data.status === "expired") {
+          await page.reload();
+        }
       } catch (error) {
         console.error("Error reading response:", error);
       }
@@ -114,6 +130,42 @@ export const handleStartSession = async (ws: any, wss: Server, page: Page) => {
     const url = frame.url();
     if (url.includes("https://www.tiktok.com/foryou")) {
       ws.send("User successfully logged in!");
+      await page.waitForNavigation();
+
+      // await page?.waitForTimeout(5000);
+
+      // Store session cookies
+      const cookies = await page.cookies();
+
+      const localStorageData = await page.evaluate(() => {
+        let data: any = {};
+        try {
+          for (let key in localStorage) {
+            data[key] = localStorage.getItem(key);
+          }
+        } catch (e) {
+          console.error("Failed to access localStorage:", e);
+        }
+        return data;
+      });
+      await client
+        .db("insta-scrapper")
+        .collection("scrap-session")
+        .updateOne(
+          {
+            username,
+          },
+          {
+            $set: {
+              username,
+              cookies,
+              localStorage: localStorageData,
+            },
+          },
+          {
+            upsert: true,
+          }
+        );
     }
   });
 };

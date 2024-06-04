@@ -23,6 +23,8 @@ import {
 } from "./services/tiktok/newUserSession";
 
 import WebSocket, { WebSocketServer } from "ws";
+import dbConnection from "./utils/mongo";
+import { MongoClient } from "mongodb";
 
 const app: Application = express();
 
@@ -45,6 +47,8 @@ let instagramPage: Page;
   tiktokPage = (await puppeteer.getPage()) as Page;
   instagramPage = (await puppeteer.getPage()) as Page;
 
+  const client = (await dbConnection("dev")) as MongoClient;
+
   // Handle WebSocket connections
   wss.on("connection", (ws: WebSocket) => {
     console.log("Client connected");
@@ -59,10 +63,10 @@ let instagramPage: Page;
       //     client.send(message);
       //   }
       // });
-      console.log(message, message === "start-session");
-      // if (message === "start-session") {
-      await handleStartSession(ws, wss, tiktokPage);
-      // }
+      const data = message.split(":");
+      if (data[0] === "start-session") {
+        await handleStartSession(ws, wss, tiktokPage, client, data[1]);
+      }
     });
 
     // Handle client disconnection
