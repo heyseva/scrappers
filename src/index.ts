@@ -66,9 +66,8 @@ let instagramPage: Page;
         //     client.send(message);
         //   }
         // });
-        const data = message.split(":");
-        if (data[0] === "start-session") {
-          await handleStartSession(ws, wss, tiktokPage, client, data[1]);
+        if (message === "start-session") {
+          await handleStartSession(ws, wss, tiktokPage, client, "heyseva");
         }
       });
 
