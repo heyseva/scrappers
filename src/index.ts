@@ -26,7 +26,7 @@ import WebSocket, { WebSocketServer } from "ws";
 import dbConnection from "./utils/mongo";
 import { MongoClient } from "mongodb";
 
-const PORT = 4001;
+const port = 4001;
 
 const app: Application = express();
 
@@ -161,6 +161,6 @@ app.get("/", async (req: Request, res: Response) => {
   res.send("working...");
 });
 
-server.listen(PORT, () => {
-  console.log(`Listening on port ${PORT}`);
+server.listen(port, () => {
+  console.log(`Listening on port ${port}`);
 });
