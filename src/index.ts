@@ -1,7 +1,7 @@
 import dotenv from "dotenv";
 dotenv.config();
 import { Request, Response, Application } from "express";
-import { createServer } from "http";
+import { createServer } from "https";
 import express from "express";
 import morgan from "morgan";
 import { tiktokProfiles } from "./services/tiktok/tiktokProfiles";
@@ -149,6 +149,10 @@ app.get("/scrape-ig-eng", async (req: Request, res: Response) => {
 app.get("/scrape-ig-eng", async (req: Request, res: Response) => {
   calculateIGEngagementRateRange(req, res);
   res.send("calculating engagement rate for instagram profiles...");
+});
+
+app.get("/", async (req: Request, res: Response) => {
+  res.send("working...");
 });
 
 server.listen(PORT, () => {
