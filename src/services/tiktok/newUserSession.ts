@@ -113,18 +113,23 @@ export const handleStartSession = async (
       } catch (error) {
         console.error("Error reading response:", error);
       }
-    } else if (response.url().includes("passport/web/check_qrconnect")) {
-      try {
-        const responseBody = await response.json();
-        if (responseBody.data.status === "expired") {
-          await page.reload();
-        }
-      } catch (error) {
-        console.error("Error reading response:", error);
-      }
     }
+    // else if (response.url().includes("passport/web/check_qrconnect")) {
+    //   try {
+    //     const responseBody = await response.json();
+    //     if (responseBody.data.status === "expired") {
+    //       await page.reload();
+    //     }
+    //   } catch (error) {
+    //     console.error("Error reading response:", error);
+    //   }
+    // }
   });
   await page.goto("https://www.tiktok.com/login/qrcode");
+
+  setTimeout(async () => {
+    await page.reload();
+  }, 60000);
 
   page.on("framenavigated", async (frame) => {
     const url = frame.url();

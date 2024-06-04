@@ -58,7 +58,11 @@ let instagramPage: Page;
 
       // Handle messages from clients
       ws.on("message", async (message: string) => {
-        console.log(`Received message: ${message}`);
+        console.log(
+          `Received message: ${message}`,
+          typeof message,
+          message === "start-session"
+        );
 
         // // Broadcast message to all clients
         // wss.clients.forEach((client) => {

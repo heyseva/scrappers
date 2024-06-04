@@ -42,6 +42,7 @@ class puppeteerController {
         NODE_ENV === "development"
           ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
           : "/usr/bin/google-chrome",
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     console.log("Browser launched.");
 
