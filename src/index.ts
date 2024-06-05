@@ -7,7 +7,7 @@ import morgan from "morgan";
 import { tiktokProfiles } from "./services/tiktok/tiktokProfiles";
 import { tiktokBrand } from "./services/tiktok/tiktokBrand";
 import puppeteer from "./utils/puppeteer";
-import { Page } from "puppeteer";
+import { Browser, Page } from "puppeteer";
 import { bulkScraper, scrapLT } from "./services/linktree/scrapper";
 import { tiktokVideo } from "./services/tiktok/video";
 import { instagamProfile } from "./services/instagram/profile";
@@ -40,22 +40,25 @@ const wss = new WebSocketServer({ server });
 let page: Page;
 let linkTreePage: Page;
 let tiktokPage: Page;
-let tiktokLoginPage: Page;
 let instagramPage: Page;
+let browser: Browser;
 (async () => {
   console.log("Starting puppeteer...");
   await puppeteer.crawl();
   page = (await puppeteer.getPage()) as Page;
+  browser = (await puppeteer.getBrowser()) as Browser;
   linkTreePage = (await puppeteer.getPage()) as Page;
   tiktokPage = (await puppeteer.getPage()) as Page;
-  tiktokLoginPage = (await puppeteer.getPage()) as Page;
+
   instagramPage = (await puppeteer.getPage()) as Page;
 
   const client = (await dbConnection("dev")) as MongoClient;
 
+  const context = await browser.createIncognitoBrowserContext();
+  const tiktokLoginPage = await context.newPage();
   // Handle WebSocket connections
   wss
-    .on("connection", (ws: WebSocket) => {
+    .on("connection", async (ws: WebSocket) => {
       console.log("Client connected");
 
       // Handle messages from clients
@@ -67,51 +70,17 @@ let instagramPage: Page;
           message === "start-session"
         );
 
-        // // Broadcast message to all clients
-        // wss.clients.forEach((client) => {
-        //   if (client.readyState === WebSocket.OPEN) {
-        //     client.send(message);
-        //   }
-        // });
         if (message.toString().includes("start-session")) {
           const input = message.toString().split(":");
-
-          await tiktokLoginPage.goto("https://www.tiktok.com", {
-            waitUntil: "networkidle2",
-          });
-
-          await page.waitForTimeout(2000);
-
-          // Clear cookies
-          const puppeteerClient = await tiktokLoginPage
-            .target()
-            .createCDPSession();
-          await puppeteerClient.send("Network.clearBrowserCookies");
-
-          // Clear local storage
-          await tiktokLoginPage.evaluate(() => {
-            if (localStorage) {
-              localStorage.clear();
-            }
-          });
-
-          // Clear session storage
-          await tiktokLoginPage.evaluate(() => {
-            if (sessionStorage) {
-              sessionStorage.clear();
-            }
-          });
-
-          // Optionally, you can clear cache as well
-          await puppeteerClient.send("Network.clearBrowserCache");
 
           await handleStartSession(ws, wss, tiktokLoginPage, client, input[1]);
         }
       });
 
       // Handle client disconnection
-      ws.on("close", () => {
+      ws.on("close", async () => {
         console.log("Client disconnected");
+        // await tiktokLoginPage.close();
       });
 
       // Send a welcome message to the client

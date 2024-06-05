@@ -49,7 +49,7 @@ class puppeteerController {
 
     this.page = await this.browser?.newPage();
     // Set the default navigation timeout to 10 minute
-    await this.page.setDefaultNavigationTimeout(600000);
+    await this.page.setDefaultNavigationTimeout(2 * 600000);
     console.log("New page created.");
     // Wait for creating the new page.
   }
