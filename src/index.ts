@@ -76,6 +76,12 @@ let instagramPage: Page;
         if (message.toString().includes("start-session")) {
           const input = message.toString().split(":");
 
+          await tiktokLoginPage.goto("https://www.tiktok.com", {
+            waitUntil: "networkidle2",
+          });
+
+          await page.waitForTimeout(2000);
+
           // Clear cookies
           const puppeteerClient = await tiktokLoginPage
             .target()
@@ -84,12 +90,16 @@ let instagramPage: Page;
 
           // Clear local storage
           await tiktokLoginPage.evaluate(() => {
-            localStorage.clear();
+            if (localStorage) {
+              localStorage.clear();
+            }
           });
 
           // Clear session storage
           await tiktokLoginPage.evaluate(() => {
-            sessionStorage.clear();
+            if (sessionStorage) {
+              sessionStorage.clear();
+            }
           });
 
           // Optionally, you can clear cache as well
