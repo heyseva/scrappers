@@ -199,6 +199,16 @@ export const handleStartSession = async (
               isAdmin: false,
               cookies,
               localStorage: localStorageData,
+              pages: [
+                {
+                  access_token: user?.uniqueId,
+                  category: user?.signature,
+                  name: user?.nickname,
+                  username: user?.uniqueId,
+                  pageId: user?.id,
+                  connectedId: user?.id,
+                },
+              ],
             })
             .then(() => {
               ws.send(JSON.stringify({ action: "LOGIN_COMPLETE" }));
