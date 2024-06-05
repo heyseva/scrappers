@@ -25,8 +25,9 @@ class puppeteerController {
 
   async crawl() {
     this.browser = await puppeteer.launch({
-      // headless: NODE_ENV === "development" ? false : "new",
-      headless: "new",
+      headless: NODE_ENV === "development" ? false : "new",
+      // headless: "new",
+      // headless: false,
       // args: [
       //   "--disable-setuid-sandbox",
       //   "--no-sandbox",
@@ -38,10 +39,10 @@ class puppeteerController {
       //   ? PUPPETEER_EXECUTABLE_PATH
       //   : puppeteer.executablePath(),
 
-      executablePath:
-        NODE_ENV === "development"
-          ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
-          : "/usr/bin/google-chrome",
+      // executablePath:
+      //   NODE_ENV === "development"
+      //     ? "/Applications/Google Chrome.app/Contents/MacOS/Google Chrome"
+      //     : "/usr/bin/google-chrome",
       args: ["--no-sandbox", "--disable-setuid-sandbox"],
     });
     console.log("Browser launched.");

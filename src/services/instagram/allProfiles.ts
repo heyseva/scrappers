@@ -26,13 +26,13 @@ export const instagamAllProfiles = async (
     const version = `mbb-june-24`;
     // const version = req.query.version || `seva-01`;
     const client = (await dbConnection("dev")) as MongoClient;
-    const live_client = (await dbConnection("live")) as MongoClient;
+    // const live_client = (await dbConnection("live")) as MongoClient;
 
     const list = await client
       .db("insta-scrapper")
       .collection("scrap-ig-user")
       // .find({ version: "seva-01", data: { $exists: false } })
-      .find({ version: "mbb-june-24" })
+      .find({ version: "seva-nashville", data: { $exists: false } })
       // 2876
       .toArray();
 
@@ -45,7 +45,7 @@ export const instagamAllProfiles = async (
     const profiles = list.map((x) => ({
       ...x,
       influencer: {
-        ig_link: x.ig_link,
+        ig_link: x.link,
       },
     }));
 
@@ -73,6 +73,7 @@ export const instagamAllProfiles = async (
                 Promise.resolve(
                   getDiscovery({
                     username: username.toLowerCase() as string,
+                    page,
                   })
                 )
                   // .then(async (result: any) => {
@@ -86,6 +87,7 @@ export const instagamAllProfiles = async (
                   //   return { reels, data: result };
                   // })
                   .then(async (result: any) => {
+                    console.log("result---", result);
                     try {
                       if (
                         result
@@ -93,17 +95,17 @@ export const instagamAllProfiles = async (
                         // result?.reels?.length > 0 &&
                         // result.data
                       ) {
-                        const posts =
-                          result.business_discovery.media.data.filter(
-                            (x: any) =>
-                              x?.like_count > 0 && x?.comments_count > 0
-                          );
-                        const likes = posts.map((x: any) => x.like_count);
-                        const comments = posts.map(
-                          (x: any) => x.comments_count
-                        );
-                        const followers_count =
-                          result.business_discovery.followers_count;
+                        // const posts =
+                        //   result.business_discovery.media.data.filter(
+                        //     (x: any) =>
+                        //       x?.like_count > 0 && x?.comments_count > 0
+                        //   );
+                        // const likes = posts.map((x: any) => x.like_count);
+                        // const comments = posts.map(
+                        //   (x: any) => x.comments_count
+                        // );
+                        // const followers_count =
+                        //   result.business_discovery.followers_count;
                         // const igEngRate = calculateEngagementRateRange({
                         //   likes: likes,
                         //   comments: comments,
@@ -198,12 +200,26 @@ export const instagamAllProfiles = async (
   }
 };
 
-export const getDiscovery = async ({ username }: { username: string }) => {
+export const getDiscovery = async ({
+  username,
+  page,
+}: {
+  username: string;
+  page: Page;
+}) => {
   try {
     const data = await axios.get(
       `https://dev.api.heyseva.com/instagram/discovery-search?handle=${username}`
     );
-    return data.data;
+    console.log(data.data);
+    if (data.data?.business_discovery) {
+      return data.data;
+    } else {
+      return await ScrapProfile({
+        link: `https://instagram.com/${username}`,
+        page,
+      });
+    }
   } catch (error) {
     return undefined;
   }
