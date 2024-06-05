@@ -23,17 +23,15 @@ export const instagamAllProfiles = async (
   page: Page
 ) => {
   try {
-    const version = `mbb-june-24`;
+    const version = `hatchforsleep`;
     // const version = req.query.version || `seva-01`;
     const client = (await dbConnection("dev")) as MongoClient;
     // const live_client = (await dbConnection("live")) as MongoClient;
 
     const list = await client
       .db("insta-scrapper")
-      .collection("scrap-ig-user")
-      // .find({ version: "seva-01", data: { $exists: false } })
-      .find({ version: "seva-nashville", data: { $exists: false } })
-      // 2876
+      .collection("scrap-ig-followers")
+      .find({ user: "https://www.instagram.com/hatchforsleep/following/" })
       .toArray();
 
     // const profiles = list.filter(
@@ -45,7 +43,7 @@ export const instagamAllProfiles = async (
     const profiles = list.map((x) => ({
       ...x,
       influencer: {
-        ig_link: x.link,
+        ig_link: `https://instagram.com/${x.link}`,
       },
     }));
 
@@ -118,7 +116,7 @@ export const instagamAllProfiles = async (
                         //   followers: followers_count,
                         // });
 
-                        const igEngRate = 0;
+                        // const igEngRate = 0;
                         console.log("saving", i);
                         client
                           .db("insta-scrapper")
@@ -132,7 +130,7 @@ export const instagamAllProfiles = async (
                                 user: x.user,
                                 data: result,
                                 active: true,
-                                // version: version,
+                                version: version,
                               },
                             },
                             {
@@ -157,7 +155,7 @@ export const instagamAllProfiles = async (
                             {
                               $set: {
                                 active: false,
-                                // version: version,
+                                version: version,
                               },
                             },
                             {

@@ -1,5 +1,6 @@
 export const SEVA_API_URL = process.env.SEVA_API_URL || "";
 export const SEVA_DISCOVERY_API = process.env.SEVA_DISCOVERY_API || "";
+export const SEVA_UPDATE_TT_SESSION = process.env.SEVA_UPDATE_TT_SESSION || "";
 export const PORT = process.env.PORT || 4000;
 
 export const INSTAGRAM_USERNAME = process.env.INSTAGRAM_USERNAME || "";

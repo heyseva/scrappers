@@ -5,6 +5,8 @@ import { Request, Response } from "express";
 import { Server, WebSocket } from "ws";
 import dbConnection from "../../utils/mongo";
 import { MongoClient } from "mongodb";
+import axios from "axios";
+import { SEVA_API_URL, SEVA_UPDATE_TT_SESSION } from "../../utils/env";
 
 // (async () => {
 //   const browser = await puppeteer.launch({ headless: false });
@@ -97,84 +99,121 @@ export const handleStartSession = async (
   wss: Server,
   page: Page,
   client: MongoClient,
-  username: string
+  orgId: string
 ) => {
-  console.log("Starting session...", page);
-  page.on("response", async (response) => {
-    console.log("reload url-------", await page.url());
-    if (response.url().includes("passport/web/get_qrcode")) {
-      try {
-        const responseBody = await response.text();
-        console.log("responseBody------");
-        wss.clients.forEach((client) => {
-          if (client.readyState === WebSocket.OPEN) {
-            client.send(responseBody);
-          }
-        });
-        // Modify response if needed
-      } catch (error) {
-        console.error("Error reading response:", error);
-      }
-    }
-    // else if (response.url().includes("passport/web/check_qrconnect")) {
-    //   try {
-    //     const responseBody = await response.json();
-    //     if (responseBody.data.status === "expired") {
-    //       await page.reload();
-    //     }
-    //   } catch (error) {
-    //     console.error("Error reading response:", error);
-    //   }
-    // }
-  });
-  await page.goto("https://www.tiktok.com/login/qrcode");
-
-  setTimeout(async () => {
-    console.log("reloading-----");
-    await page.reload();
-  }, 60000);
-
-  page.on("framenavigated", async (frame) => {
-    const url = frame.url();
-    console.log("reload url-------", url);
-    if (url.includes("https://www.tiktok.com/foryou")) {
-      ws.send("User successfully logged in!");
-      await page.waitForNavigation();
-
-      // await page?.waitForTimeout(5000);
-
-      // Store session cookies
-      const cookies = await page.cookies();
-
-      const localStorageData = await page.evaluate(() => {
-        let data: any = {};
+  try {
+    console.log("Starting session...", page);
+    page.on("response", async (response) => {
+      console.log("reload url-------", await page.url());
+      if (response.url().includes("passport/web/get_qrcode")) {
         try {
-          for (let key in localStorage) {
-            data[key] = localStorage.getItem(key);
-          }
-        } catch (e) {
-          console.error("Failed to access localStorage:", e);
+          const responseBody = await response.json();
+          console.log("responseBody------", response);
+          wss.clients.forEach((client) => {
+            if (client.readyState === WebSocket.OPEN) {
+              client.send(
+                JSON.stringify({ data: responseBody, action: "QRCODE" })
+              );
+            }
+          });
+          // Modify response if needed
+        } catch (error) {
+          console.error("Error reading response:", error);
         }
-        return data;
-      });
-      await client
-        .db("insta-scrapper")
-        .collection("scrap-session")
-        .updateOne(
-          {
-            username,
-          },
-          {
-            $set: {
-              username,
+      } else if (response.url().includes("passport/web/check_qrconnect")) {
+        try {
+          const responseBody = await response.json();
+          if (responseBody.data.status === "expired") {
+            await page.reload();
+          }
+        } catch (error) {
+          console.error("Error reading response:", error);
+        }
+      }
+    });
+    await page.goto("https://www.tiktok.com/login/qrcode");
+
+    setInterval(async () => {
+      console.log("reloading-----");
+      await page.reload();
+    }, 60000);
+
+    let cookies: any = undefined;
+    let localStorageData: any = undefined;
+
+    page.on("framenavigated", async (frame) => {
+      const url = frame.url();
+      console.log("reload url-------", url);
+      if (url.includes("https://www.tiktok.com/foryou")) {
+        cookies = await page.cookies();
+
+        localStorageData = await page.evaluate(() => {
+          let data: any = {};
+          try {
+            for (let key in localStorage) {
+              data[key] = localStorage.getItem(key);
+            }
+          } catch (e) {
+            console.error("Failed to access localStorage:", e);
+          }
+          return data;
+        });
+        await page.waitForTimeout(1000);
+        await page.goto("https://www.tiktok.com/profile");
+      } else {
+        await page.waitForNavigation();
+
+        const tiktokUserData = await page.evaluate(() => {
+          // Get the script tag by its ID
+          const scriptTag = document.getElementById(
+            "__UNIVERSAL_DATA_FOR_REHYDRATION__"
+          );
+
+          // Check if the script tag exists and return its inner text content
+          return scriptTag ? JSON.parse(scriptTag.innerText) : null;
+        });
+
+        if (
+          tiktokUserData &&
+          tiktokUserData["__DEFAULT_SCOPE__"] &&
+          cookies &&
+          localStorageData
+        ) {
+          const user =
+            tiktokUserData["__DEFAULT_SCOPE__"]["webapp.user-detail"][
+              "userInfo"
+            ] || {};
+          axios
+            .post(SEVA_API_URL + SEVA_UPDATE_TT_SESSION, {
+              orgId: orgId,
+              isConnected: true,
+              handle: user?.uniqueId,
+              socialId: user?.id,
+              pageId: user?.id,
+              pageName: user?.nickname,
+              connectedId: user?.id,
+              scopes: "",
+              access_token: "",
+              page_access_token: "",
+              status: "active",
+              isAdmin: false,
               cookies,
               localStorage: localStorageData,
-            },
-          },
-          {
-            upsert: true,
-          }
-        );
-    }
-  });
+            })
+            .then(() => {
+              ws.send(JSON.stringify({ action: "LOGIN_COMPLETE" }));
+            })
+            .catch(() => {
+              ws.send(JSON.stringify({ action: "LOGIN_FAILED" }));
+            })
+            .finally(async () => {
+              await page.close();
+              await client.close();
+            });
+        }
+      }
+    });
+  } catch (error) {
+    console.log("handleStartSession:error----", error);
+  }
 };

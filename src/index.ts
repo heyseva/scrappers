@@ -40,6 +40,7 @@ const wss = new WebSocketServer({ server });
 let page: Page;
 let linkTreePage: Page;
 let tiktokPage: Page;
+let tiktokLoginPage: Page;
 let instagramPage: Page;
 (async () => {
   console.log("Starting puppeteer...");
@@ -47,6 +48,7 @@ let instagramPage: Page;
   page = (await puppeteer.getPage()) as Page;
   linkTreePage = (await puppeteer.getPage()) as Page;
   tiktokPage = (await puppeteer.getPage()) as Page;
+  tiktokLoginPage = (await puppeteer.getPage()) as Page;
   instagramPage = (await puppeteer.getPage()) as Page;
 
   const client = (await dbConnection("dev")) as MongoClient;
@@ -61,6 +63,7 @@ let instagramPage: Page;
         console.log(
           `Received message: ${message}`,
           typeof message,
+          message.toString(),
           message === "start-session"
         );
 
@@ -70,9 +73,30 @@ let instagramPage: Page;
         //     client.send(message);
         //   }
         // });
-        // if (message === "start-session") {
-        await handleStartSession(ws, wss, tiktokPage, client, "heyseva");
-        // }
+        if (message.toString().includes("start-session")) {
+          const input = message.toString().split(":");
+
+          // Clear cookies
+          const puppeteerClient = await tiktokLoginPage
+            .target()
+            .createCDPSession();
+          await puppeteerClient.send("Network.clearBrowserCookies");
+
+          // Clear local storage
+          await tiktokLoginPage.evaluate(() => {
+            localStorage.clear();
+          });
+
+          // Clear session storage
+          await tiktokLoginPage.evaluate(() => {
+            sessionStorage.clear();
+          });
+
+          // Optionally, you can clear cache as well
+          await puppeteerClient.send("Network.clearBrowserCache");
+
+          await handleStartSession(ws, wss, tiktokLoginPage, client, input[1]);
+        }
       });
 
       // Handle client disconnection
@@ -81,7 +105,7 @@ let instagramPage: Page;
       });
 
       // Send a welcome message to the client
-      ws.send("Welcome to the WebSocket server!");
+      ws.send(JSON.stringify({ action: "CONNECTED" }));
     })
     .on("error", (error) => {
       console.log("error-------", error);
