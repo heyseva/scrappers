@@ -84,7 +84,7 @@ export const handleStartSession = async (
     page.on("framenavigated", async (frame) => {
       // if (frame === page.mainFrame()) {
       const url = frame.url();
-      console.log("reload url-------", url);
+      console.log("framenavigated: reload url-------", url);
       if (url.includes("https://www.tiktok.com/foryou")) {
         cookies = await page.cookies();
 
