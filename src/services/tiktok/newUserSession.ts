@@ -57,6 +57,7 @@ export const handleStartSession = async (
           console.error("Error reading response:", error);
         }
       } else if (request.isNavigationRequest() && response.status() === 200) {
+        console.log("response.url()------", response.url());
       }
       // else if (response.url().includes("passport/web/check_qrconnect")) {
       //   try {
@@ -81,92 +82,92 @@ export const handleStartSession = async (
     let eventFired: boolean = false;
 
     page.on("framenavigated", async (frame) => {
-      if (frame === page.mainFrame()) {
-        const url = frame.url();
-        console.log("reload url-------", url);
-        if (url.includes("https://www.tiktok.com/foryou")) {
-          cookies = await page.cookies();
+      // if (frame === page.mainFrame()) {
+      const url = frame.url();
+      console.log("reload url-------", url);
+      if (url.includes("https://www.tiktok.com/foryou")) {
+        cookies = await page.cookies();
 
-          localStorageData = await page.evaluate(() => {
-            let data: any = {};
-            try {
-              for (let key in localStorage) {
-                data[key] = localStorage.getItem(key);
-              }
-            } catch (e) {
-              console.error("Failed to access localStorage:", e);
+        localStorageData = await page.evaluate(() => {
+          let data: any = {};
+          try {
+            for (let key in localStorage) {
+              data[key] = localStorage.getItem(key);
             }
-            return data;
-          });
-          await page.waitForTimeout(1000);
-          await page.goto("https://www.tiktok.com/profile");
-        } else {
-          await page.waitForTimeout(3000);
-          const url = await page.url();
-
-          if (
-            cookies &&
-            localStorageData &&
-            url.includes("https://www.tiktok.com/@")
-          ) {
-            const user = url.split("/@")[1].replace("?lang=en", "");
-            axios
-              .post("http://localhost:8000" + SEVA_UPDATE_TT_SESSION, {
-                orgId: orgId,
-                isConnected: true,
-                handle: user,
-                socialId: user,
-                pageId: user,
-                pageName: user,
-                connectedId: user,
-                scopes: "",
-                access_token: "",
-                page_access_token: "",
-                status: "active",
-                isAdmin: false,
-                cookies,
-                localStorage: localStorageData,
-                pages: [
-                  {
-                    access_token: user,
-                    category: user,
-                    name: user,
-                    username: user,
-                    pageId: user,
-                    connectedId: user,
-                  },
-                ],
-              })
-              .then(() => {
-                if (!eventFired) {
-                  ws.send(JSON.stringify({ action: "LOGIN_COMPLETE" }));
-                  eventFired = true;
-                }
-              })
-              .catch(() => {
-                if (!eventFired) {
-                  ws.send(JSON.stringify({ action: "LOGIN_FAILED" }));
-                  eventFired = true;
-                }
-              })
-              .finally(async () => {
-                // await page.close();
-                await client.close();
-
-                // clear page login session and cookies
-                try {
-                  await page.evaluate(() => {
-                    localStorage && localStorage?.clear();
-                    sessionStorage && sessionStorage?.clear();
-                  });
-                  await page?.deleteCookie();
-                } catch (error) {
-                  console.log("Error clearing cookies:", error);
-                }
-              });
+          } catch (e) {
+            console.error("Failed to access localStorage:", e);
           }
+          return data;
+        });
+        await page.waitForTimeout(1000);
+        await page.goto("https://www.tiktok.com/profile");
+      } else {
+        await page.waitForTimeout(3000);
+        const url = await page.url();
+
+        if (
+          cookies &&
+          localStorageData &&
+          url.includes("https://www.tiktok.com/@")
+        ) {
+          const user = url.split("/@")[1].replace("?lang=en", "");
+          axios
+            .post(SEVA_API_URL + SEVA_UPDATE_TT_SESSION, {
+              orgId: orgId,
+              isConnected: true,
+              handle: user,
+              socialId: user,
+              pageId: user,
+              pageName: user,
+              connectedId: user,
+              scopes: "",
+              access_token: "",
+              page_access_token: "",
+              status: "active",
+              isAdmin: false,
+              cookies,
+              localStorage: localStorageData,
+              pages: [
+                {
+                  access_token: user,
+                  category: user,
+                  name: user,
+                  username: user,
+                  pageId: user,
+                  connectedId: user,
+                },
+              ],
+            })
+            .then(() => {
+              if (!eventFired) {
+                ws.send(JSON.stringify({ action: "LOGIN_COMPLETE" }));
+                eventFired = true;
+              }
+            })
+            .catch(() => {
+              if (!eventFired) {
+                ws.send(JSON.stringify({ action: "LOGIN_FAILED" }));
+                eventFired = true;
+              }
+            })
+            .finally(async () => {
+              // await page.close();
+              await client.close();
+
+              // clear page login session and cookies
+              try {
+                await page.evaluate(() => {
+                  localStorage && localStorage?.clear();
+                  sessionStorage && sessionStorage?.clear();
+                });
+                await page?.deleteCookie();
+              } catch (error) {
+                console.log("Error clearing cookies:", error);
+              }
+            });
         }
       }
+      // }
     });
   } catch (error) {
     console.log("handleStartSession:error----", error);
