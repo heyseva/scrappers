@@ -72,10 +72,10 @@ export const handleStartSession = async (
     });
     await page.goto("https://www.tiktok.com/login/qrcode");
 
-    setTimeout(async () => {
+    const intervalId = setInterval(async () => {
       console.log("reloading-----");
       await page.reload();
-    }, 2 * 60000);
+    }, 60000);
 
     let cookies: any = undefined;
     let localStorageData: any = undefined;
@@ -102,14 +102,13 @@ export const handleStartSession = async (
         await page.waitForTimeout(1000);
         await page.goto("https://www.tiktok.com/profile");
       } else {
-        await page.waitForTimeout(3000);
         const url = await page.url();
-
         if (
           cookies &&
           localStorageData &&
           url.includes("https://www.tiktok.com/@")
         ) {
+          intervalId && clearInterval(intervalId);
           const user = url.split("/@")[1].replace("?lang=en", "");
           axios
             .post(SEVA_API_URL + SEVA_UPDATE_TT_SESSION, {
@@ -144,8 +143,9 @@ export const handleStartSession = async (
                 eventFired = true;
               }
             })
-            .catch(() => {
+            .catch((error) => {
               if (!eventFired) {
+                console.log("error----", error.message);
                 ws.send(JSON.stringify({ action: "LOGIN_FAILED" }));
                 eventFired = true;
               }
