@@ -1,5 +1,4 @@
 import dbConnection from "../../utils/mongo";
-import puppeteer from "../../utils/puppeteer";
 import Async from "async";
 import { scrapTiktokProfile } from "./common";
 import { MongoClient, ObjectId } from "mongodb";

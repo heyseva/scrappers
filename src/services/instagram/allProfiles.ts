@@ -23,27 +23,29 @@ export const instagamAllProfiles = async (
   page: Page
 ) => {
   try {
-    const version = `hatchforsleep`;
+    const version = `linenoaksinteriors`;
     // const version = req.query.version || `seva-01`;
     const client = (await dbConnection("dev")) as MongoClient;
     // const live_client = (await dbConnection("live")) as MongoClient;
 
+    // const list = await client
+    //   .db("insta-scrapper")
+    //   .collection("scrap-ig-followers")
+    //   .find({ user: "https://www.instagram.com/hatchforsleep/following/" })
+    //   .toArray();
     const list = await client
-      .db("insta-scrapper")
-      .collection("scrap-ig-followers")
-      .find({ user: "https://www.instagram.com/hatchforsleep/following/" })
+      ?.db("insta-scrapper")
+      .collection("scrap-ig-user")
+      .find({
+        version: { $regex: "linenoaksinteriors" },
+        data: { $exists: false },
+      })
       .toArray();
-
-    // const profiles = list.filter(
-    //   (x: any) =>
-    //     x.influencer.ig_link &&
-    //     !existing.find((y: any) => y.link === x.influencer.ig_link)
-    // );
 
     const profiles = list.map((x) => ({
       ...x,
       influencer: {
-        ig_link: `https://instagram.com/${x.link}`,
+        ig_link: x.link,
       },
     }));
 
@@ -74,56 +76,37 @@ export const instagamAllProfiles = async (
                     page,
                   })
                 )
-                  // .then(async (result: any) => {
-                  //   console.log("result", JSON.stringify(result, null, 2));
-                  //   const reels = await scrapIGPosts({
-                  //     page,
-                  //     item: { url: link },
-                  //     subPage:
-                  //       link.charAt(link.length - 1) === "/" ? "reels" : "/reels",
-                  //   });
-                  //   return { reels, data: result };
-                  // })
                   .then(async (result: any) => {
-                    console.log("result---", result);
+                    const reels = await scrapIGPosts({
+                      page,
+                      item: { url: link },
+                      subPage:
+                        link.charAt(link.length - 1) === "/"
+                          ? "reels"
+                          : "/reels",
+                    });
+                    return { reels, data: result };
+                  })
+                  .then(async (result: any) => {
                     try {
-                      if (
-                        result
-                        // &&
-                        // result?.reels?.length > 0 &&
-                        // result.data
-                      ) {
-                        // const posts =
-                        //   result.business_discovery.media.data.filter(
-                        //     (x: any) =>
-                        //       x?.like_count > 0 && x?.comments_count > 0
-                        //   );
-                        // const likes = posts.map((x: any) => x.like_count);
-                        // const comments = posts.map(
-                        //   (x: any) => x.comments_count
-                        // );
-                        // const followers_count =
-                        //   result.business_discovery.followers_count;
-                        // const igEngRate = calculateEngagementRateRange({
-                        //   likes: likes,
-                        //   comments: comments,
-                        //   followers: followers_count,
-                        // });
-
-                        // const igEngRate = analyzeEngagement({
-                        //   likes: likes,
-                        //   comments: comments,
-                        //   followers: followers_count,
-                        // });
-
-                        // const igEngRate = 0;
+                      if (result) {
                         console.log("saving", i);
+
+                        if (result.result?.business_discovery) {
+                          result.result.emails = extractEmails(
+                            result.result.business_discovery.biography
+                          );
+                          result.result.urls = urlify(
+                            result.result.business_discovery.biography
+                          );
+                        }
+
                         client
                           .db("insta-scrapper")
                           .collection("scrap-ig-user")
                           .updateOne(
                             {
-                              ig_link: link,
+                              link: link,
                             },
                             {
                               $set: {
@@ -219,7 +202,10 @@ export const getDiscovery = async ({
       });
     }
   } catch (error) {
-    return undefined;
+    return await ScrapProfile({
+      link: `https://instagram.com/${username}`,
+      page,
+    });
   }
 };
 
@@ -297,9 +283,9 @@ export const ScrapProfile = async ({
     let name = $(
       '[class="x1lliihq x1plvlek xryxfnj x1n2onr6 x193iq5w xeuugli x1fj9vlw x13faqbe x1vvkbs x1s928wv xhkezso x1gmr53x x1cpjm7i x1fgarty x1943h6x x1i0vuye xvs91rp x1s688f x5n08af x10wh9bi x1wdrske x8viiok x18hxmgj"]'
     ).text();
-    let bio = $('[class="_ap3a _aaco _aacu _aacx _aad6 _aade"]').text();
-    const email = extractEmails(bio);
-    const urls = urlify(bio);
+    let biography = $('[class="_ap3a _aaco _aacu _aacx _aad6 _aade"]').text();
+    const email = extractEmails(biography);
+    const urls = urlify(biography);
 
     const buttonClick = await page?.$(
       "#mount_0_0_ix > div > div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div > div.x78zum5.xdt5ytf.x10cihs4.x1t2pt76.x1n2onr6.x1ja2u2z > div:nth-child(2) > section > main > div > header > section > div.x6s0dn4.x78zum5.x1q0g3np.xs83m0k.xeuugli.x1n2onr6 > div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.xmn8rco.x1n2onr6.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.x1q0g3np.xqjyukv.x1qjc9v5.x1oa3qoh.x1nhvcw1 > div > div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1i64zmx.x1n2onr6.x1plvlek.xryxfnj.x1iyjqo2.x2lwn1j.xeuugli.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1nhvcw1 > button"
@@ -315,7 +301,7 @@ export const ScrapProfile = async ({
 
     return {
       link,
-      bio,
+      biography,
       email,
       urls,
       isVerified: verified,

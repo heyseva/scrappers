@@ -6,7 +6,7 @@ import express from "express";
 import morgan from "morgan";
 import { tiktokProfiles } from "./services/tiktok/tiktokProfiles";
 import { tiktokBrand } from "./services/tiktok/tiktokBrand";
-import puppeteer from "./utils/puppeteer";
+import { createPage, launchBrowser, loginInstagram } from "./utils/puppeteer";
 import { Browser, Page } from "puppeteer";
 import { bulkScraper, scrapLT } from "./services/linktree/scrapper";
 import { tiktokVideo } from "./services/tiktok/video";
@@ -25,6 +25,8 @@ import {
 import WebSocket, { WebSocketServer } from "ws";
 import dbConnection from "./utils/mongo";
 import { MongoClient } from "mongodb";
+import { tiktokHashTag } from "./services/tiktok/hashtag";
+import { tiktokFollowers } from "./services/tiktok/followers";
 
 const port = 4001;
 
@@ -44,13 +46,11 @@ let instagramPage: Page;
 let browser: Browser;
 (async () => {
   console.log("Starting puppeteer...");
-  await puppeteer.crawl();
-  page = (await puppeteer.getPage()) as Page;
-  browser = (await puppeteer.getBrowser()) as Browser;
-  linkTreePage = (await puppeteer.getPage()) as Page;
-  tiktokPage = (await puppeteer.getPage()) as Page;
-
-  instagramPage = (await puppeteer.getPage()) as Page;
+  browser = await launchBrowser();
+  page = await createPage(browser);
+  linkTreePage = await createPage(browser);
+  tiktokPage = await createPage(browser);
+  instagramPage = await createPage(browser);
 
   const client = (await dbConnection("dev")) as MongoClient;
 
@@ -95,15 +95,21 @@ app.use(morgan("dev"));
 
 app.get("/ig-login", async (req: Request, res: Response) => {
   await instagramPage.waitForTimeout(2000);
-  await puppeteer.login(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD, instagramPage);
+  await loginInstagram(instagramPage, INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD);
   await instagramPage.waitForTimeout(2000);
   res.send("Logged in to Instagram...");
 });
 
-app.get("/scrape-tt-profiles", (req: Request, res: Response) => {
-  //   scrapeLogic(res);
-  tiktokProfiles();
+app.get("/scrape-tt-profiles", async (req: Request, res: Response) => {
+  const page = await createPage(browser);
+  tiktokProfiles(page);
   res.send("Scraping TikTok profiles...");
+});
+
+app.get("/scrape-tt-followers", async (req: Request, res: Response) => {
+  const page = await createPage(browser);
+  tiktokFollowers(page);
+  res.send("Scraping TikTok followers...");
 });
 
 app.get("/scrape-tt-brand", async (req: Request, res: Response) => {
@@ -116,12 +122,18 @@ app.get("/scrape-tt-video", async (req: Request, res: Response) => {
 
 app.get("/scrape-tt-posts", async (req: Request, res: Response) => {
   tiktokAllPosts(tiktokPage);
-  res.send("Scraping Linktree profiles...");
+  res.send("Scraping tiktok profiles...");
+});
+
+app.get("/scrape-tt-hashtag", async (req: Request, res: Response) => {
+  const page = await createPage(browser);
+  tiktokHashTag(req, page);
+  res.send("Scraping tiktok hashtag...");
 });
 
 app.get("/tt-session", async (req: Request, res: Response) => {
   console.log("Creating new tiktok session...");
-  const newTiktokPage = (await puppeteer.getPage()) as Page;
+  const newTiktokPage = await createPage(browser);
   await createLoginSession(newTiktokPage, res, wss);
 });
 
@@ -169,4 +181,10 @@ app.get("/", async (req: Request, res: Response) => {
 
 server.listen(port, () => {
   console.log(`Listening on port ${port}`);
+});
+
+server.on("upgrade", (request, socket, head) => {
+  wss.handleUpgrade(request, socket, head, (ws) => {
+    wss.emit("connection", ws, request);
+  });
 });

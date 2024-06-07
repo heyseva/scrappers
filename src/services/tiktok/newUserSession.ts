@@ -59,16 +59,6 @@ export const handleStartSession = async (
       } else if (request.isNavigationRequest() && response.status() === 200) {
         console.log("response.url()------", response.url());
       }
-      // else if (response.url().includes("passport/web/check_qrconnect")) {
-      //   try {
-      //     const responseBody = await response.json();
-      //     if (responseBody.data.status === "expired") {
-      //       await page.reload();
-      //     }
-      //   } catch (error) {
-      //     console.error("Error reading response:", error);
-      //   }
-      // }
     });
     await page.goto("https://www.tiktok.com/login/qrcode");
 
@@ -139,31 +129,24 @@ export const handleStartSession = async (
             })
             .then(() => {
               if (!eventFired) {
-                ws.send(JSON.stringify({ action: "LOGIN_COMPLETE" }));
+                if (ws) {
+                  ws.send(JSON.stringify({ action: "LOGIN_COMPLETE" }));
+                }
                 eventFired = true;
               }
             })
             .catch((error) => {
+              console.error("Error updating session:", error.message);
               if (!eventFired) {
-                console.log("error----", error.message);
-                ws.send(JSON.stringify({ action: "LOGIN_FAILED" }));
+                if (ws) {
+                  ws.send(JSON.stringify({ action: "LOGIN_FAILED" }));
+                }
                 eventFired = true;
               }
             })
             .finally(async () => {
-              // await page.close();
               await client.close();
-
-              // clear page login session and cookies
-              try {
-                await page.evaluate(() => {
-                  localStorage && localStorage?.clear();
-                  sessionStorage && sessionStorage?.clear();
-                });
-                await page?.deleteCookie();
-              } catch (error) {
-                console.log("Error clearing cookies:", error);
-              }
+              await clearPageData(page);
             });
         }
       }
@@ -171,5 +154,17 @@ export const handleStartSession = async (
     });
   } catch (error) {
     console.log("handleStartSession:error----", error);
+  }
+};
+
+const clearPageData = async (page: Page) => {
+  try {
+    await page.evaluate(() => {
+      localStorage.clear();
+      sessionStorage.clear();
+    });
+    await page.deleteCookie();
+  } catch (error) {
+    console.error("Error clearing cookies:", error);
   }
 };

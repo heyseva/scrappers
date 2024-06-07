@@ -1,30 +1,14 @@
 import dbConnection from "../../utils/mongo";
-import puppeteer from "../../utils/puppeteer";
 import Async from "async";
 import { scrapTiktokProfile } from "./common";
 import { MongoClient, ObjectId } from "mongodb";
 import { users } from "./constant";
+import { Page } from "puppeteer";
 
-export const tiktokProfiles = async () => {
+export const tiktokProfiles = async (page: Page) => {
   try {
     const newDate = new Date().toISOString();
-    await puppeteer.crawl();
-    let page = await puppeteer.getPage();
     const client = (await dbConnection("dev")) as MongoClient;
-    // const live_client = (await dbConnection("live")) as MongoClient;
-
-    // const profiles: any = await client
-    //   ?.db("insta-scrapper")
-    //   .collection("scrap-ig-user")
-    //   .aggregate([
-    //     {
-    //       $match: {
-    //         tt_link: { $exists: true },
-    //         tt_data: { $exists: false },
-    //       },
-    //     },
-    //   ])
-    //   .toArray();
 
     const profiles: any = users;
 

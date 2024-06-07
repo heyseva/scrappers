@@ -1,13 +1,11 @@
 import dbConnection from "../../utils/mongo";
-import puppeteer from "../../utils/puppeteer";
 import Async from "async";
-import { scrapTiktokProfile, scrapTiktokProfileFollowings } from "./common";
+import { scrapTiktokProfileFollowings } from "./common";
+import { Page } from "puppeteer";
 
-export const tiktokProfiles = async () => {
+export const tiktokFollowers = async (page: Page) => {
   try {
     const newDate = new Date().toISOString();
-    await puppeteer.crawl();
-    let page = await puppeteer.getPage();
     const client: any = await dbConnection("dev");
 
     const INSTA: any = [];
