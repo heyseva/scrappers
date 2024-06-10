@@ -263,9 +263,7 @@ export const ScrapProfile = async ({
     //   });
     // });
 
-    await page?.waitForTimeout(3000);
-
-    const links = await page.evaluate(() => {
+    await page.evaluate(() => {
       try {
         // @ts-ignore
         const button: ElementHandle = document.querySelector(
@@ -273,28 +271,13 @@ export const ScrapProfile = async ({
         );
         if (button && button) {
           button?.click();
-          return (
-            document
-              .querySelectorAll('[rel="me nofollow noopener noreferrer"]')
-              // @ts-ignore
-              ?.map((x: any) => x.href)
-          );
-        } else if (
-          document.querySelectorAll('[rel="me nofollow noopener noreferrer"]')
-        ) {
-          return (
-            document
-              .querySelectorAll('[rel="me nofollow noopener noreferrer"]')
-              // @ts-ignore
-              ?.map((x: any) => x.href)
-          );
         }
       } catch (error) {
         console.log("error", error);
       }
     });
 
-    await page?.waitForTimeout(3000);
+    await page?.waitForTimeout(1000);
 
     const content = await page?.content();
     let $ = cheerio.load(content || "");
@@ -360,12 +343,22 @@ export const ScrapProfile = async ({
         console.log($(element).text());
       });
 
+    // Select elements and extract text from <span> into an array
+    const links = new Set();
+    $('[rel="me nofollow noopener noreferrer"]')
+      .find("span")
+      .each((i, elem) => {
+        links.add($(elem).text());
+      });
+
+    console.log(links);
+
     return {
       link,
       biography,
       email,
       bioUrls,
-      links,
+      links: Array.from(links),
       isVerified: verified,
       handleName,
       name,
