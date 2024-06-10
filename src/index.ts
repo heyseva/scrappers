@@ -47,15 +47,16 @@ let browser: Browser;
 (async () => {
   console.log("Starting puppeteer...");
   browser = await launchBrowser();
-  page = await createPage(browser);
-  linkTreePage = await createPage(browser);
-  tiktokPage = await createPage(browser);
+  // page = await createPage(browser);
+  // linkTreePage = await createPage(browser);
+  // tiktokPage = await createPage(browser);
   instagramPage = await createPage(browser);
 
   const client = (await dbConnection("dev")) as MongoClient;
 
-  const context = await browser.createIncognitoBrowserContext();
-  const tiktokLoginPage = await context.newPage();
+  // const context = await browser.createIncognitoBrowserContext();
+  let tiktokLoginPage: Page;
+  // const tiktokLoginPage = await context.newPage();
   // Handle WebSocket connections
   wss
     .on("connection", async (ws: WebSocket) => {

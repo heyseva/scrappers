@@ -23,31 +23,61 @@ export const instagamAllProfiles = async (
   page: Page
 ) => {
   try {
-    const version = `linenoaksinteriors`;
+    const version = `youthforia`;
     // const version = req.query.version || `seva-01`;
     const client = (await dbConnection("dev")) as MongoClient;
     // const live_client = (await dbConnection("live")) as MongoClient;
 
-    // const list = await client
-    //   .db("insta-scrapper")
-    //   .collection("scrap-ig-followers")
-    //   .find({ user: "https://www.instagram.com/hatchforsleep/following/" })
-    //   .toArray();
     const list = await client
+      .db("insta-scrapper")
+      .collection("scrap-ig-followers")
+      .find({ user: { $regex: "https://www.instagram.com/youthforia" } })
+      .toArray();
+    const exitingList = await client
       ?.db("insta-scrapper")
       .collection("scrap-ig-user")
       .find({
-        version: { $regex: "linenoaksinteriors" },
-        data: { $exists: false },
+        user: { $regex: "youthforia" },
+        version: "seva-assigned",
       })
       .toArray();
 
-    const profiles = list.map((x) => ({
-      ...x,
-      influencer: {
-        ig_link: x.link,
-      },
-    }));
+    // const profiles = list.map((x) => ({
+    //   ...x,
+    //   influencer: {
+    //     ig_link: `https://instagram.com${x.link}`,
+    //   },
+    // }));
+
+    // const list = await client
+    //   ?.db("heyseva")
+    //   .collection("assignedinfluencers")
+    //   .aggregate([
+    //     {
+    //       $lookup: {
+    //         from: "influencers",
+    //         localField: "influencerId",
+    //         foreignField: "_id",
+    //         as: "influencer",
+    //       },
+    //     },
+    //     {
+    //       $unwind: "$influencer",
+    //     },
+    //     {
+    //       $match: {
+    //         ig_followers_growth_rate: { $exists: false },
+    //       },
+    //     },
+    //   ])
+    //   .toArray();
+
+    const profiles = list.filter((x) => {
+      const data = exitingList.find((y: any) => y.link.includes(x.link));
+      if (!data) {
+        return true;
+      }
+    });
 
     console.log("profiles", profiles.length);
 
@@ -76,17 +106,17 @@ export const instagamAllProfiles = async (
                     page,
                   })
                 )
-                  .then(async (result: any) => {
-                    const reels = await scrapIGPosts({
-                      page,
-                      item: { url: link },
-                      subPage:
-                        link.charAt(link.length - 1) === "/"
-                          ? "reels"
-                          : "/reels",
-                    });
-                    return { reels, data: result };
-                  })
+                  // .then(async (result: any) => {
+                  //   const reels = await scrapIGPosts({
+                  //     page,
+                  //     item: { url: link },
+                  //     subPage:
+                  //       link.charAt(link.length - 1) === "/"
+                  //         ? "reels"
+                  //         : "/reels",
+                  //   });
+                  //   return { reels, data: result };
+                  // })
                   .then(async (result: any) => {
                     try {
                       if (result) {
