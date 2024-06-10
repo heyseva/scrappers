@@ -90,8 +90,17 @@ export const scrapTiktokVideo = async ({
     }
   } catch (error) {
     console.log("error in scrapTiktokProfile:", error);
-    setTimeout(() => {
-      callback(null);
-    }, 2000);
+    if (callback) {
+      setTimeout(() => {
+        callback(null);
+      }, 2000);
+    } else {
+      return {
+        isActive: false,
+        url: url,
+        scriptData: undefined,
+        createdAt: newDate,
+      };
+    }
   }
 };

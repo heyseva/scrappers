@@ -6,6 +6,9 @@ import { getNumberValue } from "../../utils/lib";
 import cheerio from "cheerio";
 import { MongoClient } from "mongodb";
 import { scrapTiktokVideo } from "./video";
+import axios from "axios";
+import { SEVA_API_URL } from "../../utils/env";
+import moment from "moment";
 
 // @ts-ignore
 async function scrollUntilNoMoreData(scrollPage: Page) {
@@ -75,8 +78,10 @@ export const tiktokHashTag = async (req: Request, tiktokPage: Page) => {
 
     // const INSTA: any = [];
     const tag = req.query.tag;
-    const orgId = req.query.orgId;
-    const tagId = req.query.tagId;
+    const orgId = req.query.orgId as string;
+    const tagId = req.query.tagId as string;
+    const pageHandle = req.query.pageHandle as string;
+    const tiktokHandle = req.query.tiktokHandle as string;
     console.log("tag------", tag);
     Async.waterfall(
       [
@@ -130,7 +135,7 @@ export const tiktokHashTag = async (req: Request, tiktokPage: Page) => {
               })
               .get();
 
-            resolve(data);
+            resolve(data.filter((x) => !x.userName.includes(tiktokHandle)));
           }).then((data) => {
             callback(null, data);
           });
@@ -140,7 +145,7 @@ export const tiktokHashTag = async (req: Request, tiktokPage: Page) => {
         if (err) {
           console.log("error", err);
         } else {
-          tiktokAllPosts(tiktokPage, result);
+          tiktokAllPosts(tiktokPage, result, orgId, tagId, pageHandle);
         }
       }
     );
@@ -149,10 +154,16 @@ export const tiktokHashTag = async (req: Request, tiktokPage: Page) => {
   }
 };
 
-export const tiktokAllPosts = async (page: Page, posts: any) => {
+export const tiktokAllPosts = async (
+  page: Page,
+  posts: any,
+  orgId: string,
+  tagId: string,
+  pageHandle: string
+) => {
   try {
     const client = (await dbConnection("dev")) as MongoClient;
-
+    console.log("tiktokAllPosts----", posts.length);
     if (posts.length) {
       Async.waterfall(
         [
@@ -167,7 +178,7 @@ export const tiktokAllPosts = async (page: Page, posts: any) => {
                 }, 20000);
               });
           },
-          ...posts.map(
+          ...[posts[0]].map(
             (profile: any, i: number) =>
               function (callback: any) {
                 const ig_link = profile.link;
@@ -206,24 +217,58 @@ export const tiktokAllPosts = async (page: Page, posts: any) => {
                                 newDate: "",
                               });
 
-                              client
-                                ?.db("insta-scrapper")
-                                .collection("scrap-ig-user")
-                                .updateOne(
-                                  {
-                                    _id: profile._id,
-                                  },
-                                  {
-                                    $push: {
-                                      tt_posts: data,
-                                    },
-                                  }
-                                )
-                                .then(() => {
-                                  setTimeout(() => {
-                                    postCallback(null);
-                                  }, 2000);
-                                });
+                              if (data?.isActive) {
+                                const tiktok =
+                                  data?.scriptData?.itemInfo?.itemStruct;
+
+                                // client
+                                //   ?.db("insta-scrapper")
+                                //   .collection("scrap-ig-user")
+                                //   .updateOne(
+                                //     {
+                                //       _id: profile._id,
+                                //     },
+                                //     {
+                                //       $push: {
+                                //         tt_posts: data,
+                                //       },
+                                //     }
+                                //   )
+                                //   .then(() => {
+                                //     setTimeout(() => {
+                                //       postCallback(null);
+                                //     }, 2000);
+                                //   });
+
+                                axios
+                                  .post(`${SEVA_API_URL}/content-library/add`, {
+                                    url: url,
+                                    username: tiktok.author.uniqueId,
+                                    orgId,
+                                    postedDate: moment(
+                                      tiktok.createTime
+                                    ).format("YYYY-MM-DD"),
+                                    mediaId: tiktok.id,
+                                    userProfilePic: tiktok.author.avatarThumb,
+                                    followers: "0",
+                                    pageHandle: pageHandle,
+                                    hashTag: tagId,
+                                    type: "tiktokHashtag",
+                                    caption: tiktok.desc,
+                                    like_count: tiktok.stats.diggCount,
+                                    comments_count: tiktok.stats.commentCount,
+                                    mediaPreviewUrl: tiktok.video.cover,
+                                  })
+                                  .then(() => {
+                                    setTimeout(() => {
+                                      postCallback(null);
+                                    }, 2000);
+                                  });
+                              } else {
+                                setTimeout(() => {
+                                  postCallback(null);
+                                }, 2000);
+                              }
                             });
                         }
                     ),

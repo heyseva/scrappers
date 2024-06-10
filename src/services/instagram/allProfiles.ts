@@ -1,7 +1,7 @@
 import Async from "async";
 import { Request, Response } from "express";
 import cheerio from "cheerio";
-import { Page, Puppeteer } from "puppeteer";
+import { ElementHandle, Page, Puppeteer } from "puppeteer";
 import { scrapIGPosts, scrapIGProfile } from "./lib";
 import dbConnection from "../../utils/mongo";
 import { MongoClient, ObjectId } from "mongodb";
@@ -253,14 +253,45 @@ export const ScrapProfile = async ({
     });
     await page?.waitForTimeout(3000);
 
-    await page.evaluate(() => {
-      const divs = document.querySelectorAll(
-        'div[style*="height: auto; overflow: hidden auto;"]'
-      );
-      // Iterate through matched divs and scroll them
-      divs.forEach((div) => {
-        div.scrollTop = div.scrollHeight;
-      });
+    // await page.evaluate(() => {
+    //   const divs = document.querySelectorAll(
+    //     'div[style*="height: auto; overflow: hidden auto;"]'
+    //   );
+    //   // Iterate through matched divs and scroll them
+    //   divs.forEach((div) => {
+    //     div.scrollTop = div.scrollHeight;
+    //   });
+    // });
+
+    await page?.waitForTimeout(3000);
+
+    const links = await page.evaluate(() => {
+      try {
+        // @ts-ignore
+        const button: ElementHandle = document.querySelector(
+          'button[class=" _acan _acao _acas _aj1- _ap30"]'
+        );
+        if (button && button) {
+          button?.click();
+          return (
+            document
+              .querySelectorAll('[rel="me nofollow noopener noreferrer"]')
+              // @ts-ignore
+              ?.map((x: any) => x.href)
+          );
+        } else if (
+          document.querySelectorAll('[rel="me nofollow noopener noreferrer"]')
+        ) {
+          return (
+            document
+              .querySelectorAll('[rel="me nofollow noopener noreferrer"]')
+              // @ts-ignore
+              ?.map((x: any) => x.href)
+          );
+        }
+      } catch (error) {
+        console.log("error", error);
+      }
     });
 
     await page?.waitForTimeout(3000);
@@ -315,7 +346,7 @@ export const ScrapProfile = async ({
     ).text();
     let biography = $('[class="_ap3a _aaco _aacu _aacx _aad6 _aade"]').text();
     const email = extractEmails(biography);
-    const urls = urlify(biography);
+    const bioUrls = urlify(biography);
 
     const buttonClick = await page?.$(
       "#mount_0_0_ix > div > div > div.x9f619.x1n2onr6.x1ja2u2z > div > div > div > div.x78zum5.xdt5ytf.x10cihs4.x1t2pt76.x1n2onr6.x1ja2u2z > div:nth-child(2) > section > main > div > header > section > div.x6s0dn4.x78zum5.x1q0g3np.xs83m0k.xeuugli.x1n2onr6 > div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.xmn8rco.x1n2onr6.x1plvlek.xryxfnj.x1c4vz4f.x2lah0s.x1q0g3np.xqjyukv.x1qjc9v5.x1oa3qoh.x1nhvcw1 > div > div.x9f619.xjbqb8w.x78zum5.x168nmei.x13lgxp2.x5pf9jr.xo71vjh.x1i64zmx.x1n2onr6.x1plvlek.xryxfnj.x1iyjqo2.x2lwn1j.xeuugli.xdt5ytf.xqjyukv.x1qjc9v5.x1oa3qoh.x1nhvcw1 > button"
@@ -333,7 +364,8 @@ export const ScrapProfile = async ({
       link,
       biography,
       email,
-      urls,
+      bioUrls,
+      links,
       isVerified: verified,
       handleName,
       name,
