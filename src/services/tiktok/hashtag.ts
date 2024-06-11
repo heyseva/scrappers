@@ -79,7 +79,8 @@ export const tiktokHashTag = async (req: Request, tiktokPage: Page) => {
     const tag1 = req.query.tag1 as string;
     const tag2 = req.query.tag2 as string;
     const orgId = req.query.orgId as string;
-    const tagId = req.query.tagId as string;
+    const tag1Id = req.query.tagId as string;
+    const tag2Id = req.query.tagId as string;
     const pageHandle = req.query.pageHandle as string;
     const tiktokHandle = req.query.tiktokHandle as string;
     console.log("tag------", tag1, tag2);
@@ -87,7 +88,8 @@ export const tiktokHashTag = async (req: Request, tiktokPage: Page) => {
       tag: tag1,
       tag2,
       orgId,
-      tagId,
+      tagId: tag1Id,
+      tag2Id: tag2Id,
       pageHandle,
       tiktokHandle,
       tiktokPage,
@@ -105,11 +107,13 @@ const tiktokWaterFall = ({
   pageHandle,
   tiktokHandle,
   tiktokPage,
+  tag2Id,
 }: {
   tag: string;
   tag2: string | undefined;
   orgId: string;
   tagId: string;
+  tag2Id: string | undefined;
   pageHandle: string;
   tiktokHandle: string;
   tiktokPage: Page;
@@ -184,6 +188,7 @@ const tiktokWaterFall = ({
             tagId,
             pageHandle,
             tag2,
+            tag2Id,
             tiktokHandle,
           });
         }
@@ -199,6 +204,7 @@ export const tiktokAllPosts = async ({
   tagId,
   pageHandle,
   tag2,
+  tag2Id,
   tiktokHandle,
 }: {
   page: Page;
@@ -208,6 +214,7 @@ export const tiktokAllPosts = async ({
   pageHandle: string;
   tag2: string | undefined;
   tiktokHandle: string;
+  tag2Id: string | undefined;
 }) => {
   try {
     const client = (await dbConnection("dev")) as MongoClient;
@@ -307,7 +314,8 @@ export const tiktokAllPosts = async ({
                 tag: tag2,
                 tag2: undefined,
                 orgId,
-                tagId,
+                tagId: tag2Id as string,
+                tag2Id: undefined,
                 pageHandle,
                 tiktokHandle,
                 tiktokPage: page,
