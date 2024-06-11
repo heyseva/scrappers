@@ -38,7 +38,7 @@ export const instagamAllProfiles = async (
       .collection("scrap-ig-user")
       .find({
         user: { $regex: "youthforia" },
-        version: "seva-assigned",
+        version: { $in: ["seva-assigned", version] },
       })
       .toArray();
 
@@ -72,12 +72,19 @@ export const instagamAllProfiles = async (
     //   ])
     //   .toArray();
 
-    const profiles = list.filter((x) => {
+    let profiles = list.filter((x) => {
       const data = exitingList.find((y: any) => y.link.includes(x.link));
       if (!data) {
         return true;
       }
     });
+
+    profiles = list.map((x) => ({
+      ...x,
+      influencer: {
+        ig_link: `https://instagram.com${x.link}`,
+      },
+    }));
 
     console.log("profiles", profiles.length);
 

@@ -2,6 +2,7 @@ import Async from "async";
 import cheerio from "cheerio";
 import { Request, Response } from "express";
 import { Page } from "puppeteer";
+import { getTiktokProfile } from "./common";
 
 export const tiktokVideo = async (req: Request, res: Response, page: Page) => {
   try {
@@ -73,11 +74,17 @@ export const scrapTiktokVideo = async ({
       }
     }
 
+    const profile = await getTiktokProfile({
+      page,
+      link: url.split("/video/")[0],
+    });
+
     if (scriptData?.statusMsg === "ok" && scriptData?.itemInfo?.itemStruct) {
       return {
         isActive: true,
         url: url,
         scriptData,
+        followers: profile?.followers,
         createdAt: newDate,
       };
     } else {
@@ -85,6 +92,7 @@ export const scrapTiktokVideo = async ({
         isActive: false,
         url: url,
         scriptData,
+        followers: "0",
         createdAt: newDate,
       };
     }
@@ -99,6 +107,7 @@ export const scrapTiktokVideo = async ({
         isActive: false,
         url: url,
         scriptData: undefined,
+        followers: "0",
         createdAt: newDate,
       };
     }

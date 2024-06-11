@@ -1,6 +1,7 @@
 import cheerio from "cheerio";
 import { MongoClient } from "mongodb";
 import { downloadImage, downloadImageLocal } from "../../helper/images";
+import { Page } from "puppeteer";
 
 export const scrapTiktokProfile = async ({
   page,
@@ -281,5 +282,43 @@ export const scrapTiktokProfileFollowings = async ({
     setTimeout(() => {
       callback(null);
     }, 2000);
+  }
+};
+
+export const getTiktokProfile = async ({
+  page,
+  link,
+}: {
+  page: Page;
+  link: string;
+}) => {
+  try {
+    let url = link.includes("https") ? link : `https://${link}`;
+    await page?.goto(url, {
+      waitUntil: "networkidle2",
+    });
+
+    const content = await page?.content();
+    let $ = cheerio.load(content || "");
+    let scriptData: any = $('[id="__UNIVERSAL_DATA_FOR_REHYDRATION__"]').text();
+    if (scriptData) {
+      try {
+        const obj = JSON.parse(scriptData);
+        scriptData = obj.__DEFAULT_SCOPE__["webapp.user-detail"];
+        return { followers: scriptData.userInfo.stats.followerCount };
+      } catch (error: any) {
+        console.log(
+          "error in parsing scriptData for:",
+          url,
+          "message :",
+          error.message
+        );
+        return { followers: "0" };
+      }
+    } else {
+      return { followers: "0" };
+    }
+  } catch (error) {
+    console.log("error in getTiktokProfile:", error);
   }
 };

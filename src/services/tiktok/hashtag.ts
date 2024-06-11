@@ -75,14 +75,46 @@ const getLinks = async ({
 export const tiktokHashTag = async (req: Request, tiktokPage: Page) => {
   try {
     const client: any = await dbConnection("dev");
-
     // const INSTA: any = [];
-    const tag = req.query.tag;
+    const tag1 = req.query.tag1 as string;
+    const tag2 = req.query.tag2 as string;
     const orgId = req.query.orgId as string;
     const tagId = req.query.tagId as string;
     const pageHandle = req.query.pageHandle as string;
     const tiktokHandle = req.query.tiktokHandle as string;
-    console.log("tag------", tag);
+    console.log("tag------", tag1, tag2);
+    await tiktokWaterFall({
+      tag: tag1,
+      tag2,
+      orgId,
+      tagId,
+      pageHandle,
+      tiktokHandle,
+      tiktokPage,
+    });
+  } catch (error) {
+    console.log("error-----", error);
+  }
+};
+
+const tiktokWaterFall = ({
+  tag,
+  tag2,
+  orgId,
+  tagId,
+  pageHandle,
+  tiktokHandle,
+  tiktokPage,
+}: {
+  tag: string;
+  tag2: string | undefined;
+  orgId: string;
+  tagId: string;
+  pageHandle: string;
+  tiktokHandle: string;
+  tiktokPage: Page;
+}) => {
+  try {
     Async.waterfall(
       [
         function (callback: any) {
@@ -145,22 +177,38 @@ export const tiktokHashTag = async (req: Request, tiktokPage: Page) => {
         if (err) {
           console.log("error", err);
         } else {
-          tiktokAllPosts(tiktokPage, result, orgId, tagId, pageHandle);
+          tiktokAllPosts({
+            page: tiktokPage,
+            posts: result,
+            orgId,
+            tagId,
+            pageHandle,
+            tag2,
+            tiktokHandle,
+          });
         }
       }
     );
-  } catch (error) {
-    console.log("error-----", error);
-  }
+  } catch (error) {}
 };
 
-export const tiktokAllPosts = async (
-  page: Page,
-  posts: any,
-  orgId: string,
-  tagId: string,
-  pageHandle: string
-) => {
+export const tiktokAllPosts = async ({
+  page,
+  posts,
+  orgId,
+  tagId,
+  pageHandle,
+  tag2,
+  tiktokHandle,
+}: {
+  page: Page;
+  posts: any;
+  orgId: string;
+  tagId: string;
+  pageHandle: string;
+  tag2: string | undefined;
+  tiktokHandle: string;
+}) => {
   try {
     const client = (await dbConnection("dev")) as MongoClient;
     console.log("tiktokAllPosts----", posts.length);
@@ -178,109 +226,73 @@ export const tiktokAllPosts = async (
                 }, 20000);
               });
           },
-          ...[posts[0]].map(
-            (profile: any, i: number) =>
+          ...posts.map(
+            (post: any, i: number) =>
               function (callback: any) {
-                const ig_link = profile.link;
-                const link = profile.tt_link;
-                console.log("fetching:", i, ":", { link, ig_link });
+                let url = post.link;
+                console.log("fetching:", i, ":", { url });
 
-                Async.waterfall(
-                  [
-                    function (postCallback: (arg0: null) => void) {
-                      page
-                        ?.goto("https://tiktok.com", {
-                          waitUntil: "networkidle2",
+                if (!url?.includes("?is_from_webapp=1")) {
+                  url = `${url}?is_from_webapp=1`.toString();
+                }
+                page
+                  ?.goto(url, {
+                    waitUntil: "networkidle2",
+                  })
+                  .then(async () => {
+                    const data = await scrapTiktokVideo({
+                      page,
+                      url,
+                      callback,
+                      newDate: "",
+                    });
+
+                    if (data?.isActive) {
+                      const tiktok = data?.scriptData?.itemInfo?.itemStruct;
+
+                      axios
+                        .post(`${SEVA_API_URL}/content-library/add`, {
+                          url: url,
+                          username: tiktok.author.uniqueId,
+                          orgId,
+                          postedDate: moment
+                            .unix(tiktok.createTime)
+                            .format("YYYY-MM-DD HH:mm:ss"),
+                          mediaId: tiktok.id,
+                          userProfilePic: tiktok.author.avatarThumb,
+                          followers: data.followers,
+                          pageHandle: pageHandle,
+                          hashTag: tagId,
+                          type: "tiktokHashtag",
+                          caption: tiktok.desc,
+                          like_count: String(tiktok.stats.diggCount),
+                          comments_count: String(tiktok.stats.commentCount),
+                          share_count: String(tiktok.stats.shareCount),
+                          views_count: String(tiktok.stats.playCount),
+                          save_count: tiktok.stats.collectCount,
+                          mediaPreviewUrl: tiktok.video.cover,
+                          mediaType: "VIDEO",
                         })
                         .then(() => {
                           setTimeout(() => {
-                            postCallback(null);
-                          }, 20000);
+                            callback(null);
+                          }, 2000);
+                        })
+                        .catch((error) => {
+                          console.log(
+                            "error in posting data to seva api",
+                            error
+                          );
+                          setTimeout(() => {
+                            callback(null);
+                          }, 2000);
                         });
-                    },
-                    ...profile.tt_data.postUrls.map(
-                      (url: any, i: number) =>
-                        function (postCallback: any) {
-                          console.log("fetching posts--:", i, url);
-                          if (!url?.includes("?is_from_webapp=1")) {
-                            url = `${url}?is_from_webapp=1`.toString();
-                          }
-                          page
-                            ?.goto(url, {
-                              waitUntil: "networkidle2",
-                            })
-                            .then(async () => {
-                              const data = await scrapTiktokVideo({
-                                page,
-                                url,
-                                callback,
-                                newDate: "",
-                              });
-
-                              if (data?.isActive) {
-                                const tiktok =
-                                  data?.scriptData?.itemInfo?.itemStruct;
-
-                                // client
-                                //   ?.db("insta-scrapper")
-                                //   .collection("scrap-ig-user")
-                                //   .updateOne(
-                                //     {
-                                //       _id: profile._id,
-                                //     },
-                                //     {
-                                //       $push: {
-                                //         tt_posts: data,
-                                //       },
-                                //     }
-                                //   )
-                                //   .then(() => {
-                                //     setTimeout(() => {
-                                //       postCallback(null);
-                                //     }, 2000);
-                                //   });
-
-                                axios
-                                  .post(`${SEVA_API_URL}/content-library/add`, {
-                                    url: url,
-                                    username: tiktok.author.uniqueId,
-                                    orgId,
-                                    postedDate: moment(
-                                      tiktok.createTime
-                                    ).format("YYYY-MM-DD"),
-                                    mediaId: tiktok.id,
-                                    userProfilePic: tiktok.author.avatarThumb,
-                                    followers: "0",
-                                    pageHandle: pageHandle,
-                                    hashTag: tagId,
-                                    type: "tiktokHashtag",
-                                    caption: tiktok.desc,
-                                    like_count: tiktok.stats.diggCount,
-                                    comments_count: tiktok.stats.commentCount,
-                                    mediaPreviewUrl: tiktok.video.cover,
-                                  })
-                                  .then(() => {
-                                    setTimeout(() => {
-                                      postCallback(null);
-                                    }, 2000);
-                                  });
-                              } else {
-                                setTimeout(() => {
-                                  postCallback(null);
-                                }, 2000);
-                              }
-                            });
-                        }
-                    ),
-                  ],
-                  function (err, result) {
-                    if (err) {
-                      console.log("error", err);
                     } else {
-                      callback(null);
+                      setTimeout(() => {
+                        callback(null);
+                      }, 2000);
                     }
-                  }
-                );
+                  });
               }
           ),
         ],
@@ -288,7 +300,19 @@ export const tiktokAllPosts = async (
           if (err) {
             console.log("error", err);
           } else {
-            console.log("All data fetched and saved in db");
+            if (!tag2) {
+              page.close().then();
+            } else {
+              tiktokWaterFall({
+                tag: tag2,
+                tag2: undefined,
+                orgId,
+                tagId,
+                pageHandle,
+                tiktokHandle,
+                tiktokPage: page,
+              });
+            }
           }
         }
       );
