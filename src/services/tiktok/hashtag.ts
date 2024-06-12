@@ -119,82 +119,89 @@ const tiktokWaterFall = ({
   tiktokPage: Page;
 }) => {
   try {
-    Async.waterfall(
-      [
-        function (callback: any) {
-          tiktokPage
-            ?.goto(`https://www.tiktok.com/tag/${tag}`, {
-              waitUntil: "networkidle2",
-            })
-            .then(async () => {
-              const count = await tiktokPage.evaluate(() => {
-                const element = document.querySelector(
-                  '[data-e2e="challenge-vvcount"]'
-                );
-                return (
-                  (element as HTMLElement)?.innerText.replace("posts", "0") ||
-                  ""
-                );
-              });
-
-              const postCount = getNumberValue(count);
-              callback(null, postCount);
-            });
-        },
-        function (postCount: number, callback: any) {
-          getLinks({ tiktokPage, callback, postCount });
-        },
-        function (count: number, callback: any) {
-          new Promise(async (resolve, reject) => {
-            const content = await tiktokPage?.content();
-            let $ = cheerio.load(content);
-
-            const items = $('[data-e2e="challenge-item"]');
-
-            const data = items
-              .map((i, el) => {
-                const link = $(el).find("a").attr("href");
-                const description = $(el).siblings("div").find("a").text();
-                const userName = $(el)
-                  .find(`[data-e2e="challenge-item-username"]`)
-                  .text();
-                const userLink = $(el)
-                  .find('[data-e2e="challenge-item-avatar"]')
-                  .attr("href");
-
-                return {
-                  link,
-                  userName,
-                  userLink,
-                  description,
-                };
+    if (tag) {
+      Async.waterfall(
+        [
+          function (callback: any) {
+            tiktokPage
+              ?.goto(`https://www.tiktok.com/tag/${tag}`, {
+                waitUntil: "networkidle2",
               })
-              .get();
+              .then(async () => {
+                const count = await tiktokPage.evaluate(() => {
+                  const element = document.querySelector(
+                    '[data-e2e="challenge-vvcount"]'
+                  );
+                  return (
+                    (element as HTMLElement)?.innerText.replace("posts", "0") ||
+                    ""
+                  );
+                });
 
-            resolve(data.filter((x) => !x.userName.includes(tiktokHandle)));
-          }).then((data) => {
-            callback(null, data);
-          });
-        },
-      ],
-      function (err, result) {
-        if (err) {
-          console.log("error", err);
-        } else {
-          tiktokAllPosts({
-            page: tiktokPage,
-            posts: result,
-            orgId,
-            tagId,
-            pageHandle,
-            tag2,
-            tag2Id,
-            tiktokHandle,
-          });
+                const postCount = getNumberValue(count);
+                callback(null, postCount);
+              });
+          },
+          function (postCount: number, callback: any) {
+            getLinks({ tiktokPage, callback, postCount });
+          },
+          function (count: number, callback: any) {
+            new Promise(async (resolve, reject) => {
+              const content = await tiktokPage?.content();
+              let $ = cheerio.load(content);
+
+              const items = $('[data-e2e="challenge-item"]');
+
+              const data = items
+                .map((i, el) => {
+                  const link = $(el).find("a").attr("href");
+                  const description = $(el).siblings("div").find("a").text();
+                  const userName = $(el)
+                    .find(`[data-e2e="challenge-item-username"]`)
+                    .text();
+                  const userLink = $(el)
+                    .find('[data-e2e="challenge-item-avatar"]')
+                    .attr("href");
+
+                  return {
+                    link,
+                    userName,
+                    userLink,
+                    description,
+                  };
+                })
+                .get();
+
+              resolve(data.filter((x) => !x.userName.includes(tiktokHandle)));
+            }).then((data) => {
+              callback(null, data);
+            });
+          },
+        ],
+        function (err, result) {
+          if (err) {
+            console.log("error", err);
+          } else {
+            tiktokAllPosts({
+              page: tiktokPage,
+              posts: result,
+              orgId,
+              tagId,
+              pageHandle,
+              tag2,
+              tag2Id,
+              tiktokHandle,
+            });
+          }
         }
-      }
-    );
-  } catch (error) {}
+      );
+    } else {
+      console.log("closing page");
+      tiktokPage.close().then();
+    }
+  } catch (error) {
+    console.log("198: error---", error);
+  }
 };
 
 export const tiktokAllPosts = async ({
@@ -267,7 +274,7 @@ export const tiktokAllPosts = async ({
                             .format("YYYY-MM-DD HH:mm:ss"),
                           mediaId: tiktok.id,
                           userProfilePic: tiktok.author.avatarThumb,
-                          followers: data.followers,
+                          followers: String(data.followers),
                           pageHandle: pageHandle,
                           hashTag: tagId,
                           type: "tiktokHashtag",

@@ -27,6 +27,7 @@ import dbConnection from "./utils/mongo";
 import { MongoClient } from "mongodb";
 import { tiktokHashTag } from "./services/tiktok/hashtag";
 import { tiktokFollowers } from "./services/tiktok/followers";
+import { instagamDiscovery } from "./services/instagram/discovery";
 
 const port = 4001;
 
@@ -54,9 +55,9 @@ let browser: Browser;
 
   const client = (await dbConnection("dev")) as MongoClient;
 
-  // const context = await browser.createIncognitoBrowserContext();
-  let tiktokLoginPage: Page;
-  // const tiktokLoginPage = await context.newPage();
+  const context = await browser.createIncognitoBrowserContext();
+  // let tiktokLoginPage: Page;
+  const tiktokLoginPage = await context.newPage();
   // Handle WebSocket connections
   wss
     .on("connection", async (ws: WebSocket) => {
@@ -166,6 +167,11 @@ app.get("/scrape-ig", async (req: Request, res: Response) => {
   res.send("Scraping instagram profiles...");
 });
 
+app.get("/scrap-ig-discovery", async (req: Request, res: Response) => {
+  instagamDiscovery(req, res, instagramPage);
+  res.send("Scraping instagram profiles...");
+});
+
 app.get("/scrape-ig-eng", async (req: Request, res: Response) => {
   calculateIGEngagementRateRange(req, res);
   res.send("calculating engagement rate for instagram profiles...");
@@ -184,8 +190,8 @@ server.listen(port, () => {
   console.log(`Listening on port ${port}`);
 });
 
-server.on("upgrade", (request, socket, head) => {
-  wss.handleUpgrade(request, socket, head, (ws) => {
-    wss.emit("connection", ws, request);
-  });
-});
+// server.on("upgrade", (request, socket, head) => {
+//   wss.handleUpgrade(request, socket, head, (ws) => {
+//     wss.emit("connection", ws, request);
+//   });
+// });
