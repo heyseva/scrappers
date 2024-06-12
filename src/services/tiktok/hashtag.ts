@@ -79,11 +79,10 @@ export const tiktokHashTag = async (req: Request, tiktokPage: Page) => {
     const tag1 = req.query.tag1 as string;
     const tag2 = req.query.tag2 as string;
     const orgId = req.query.orgId as string;
-    const tag1Id = req.query.tagId as string;
-    const tag2Id = req.query.tagId as string;
+    const tag1Id = req.query.tag1Id as string;
+    const tag2Id = req.query.tag2Id as string;
     const pageHandle = req.query.pageHandle as string;
     const tiktokHandle = req.query.tiktokHandle as string;
-    console.log("tag------", tag1, tag2);
     await tiktokWaterFall({
       tag: tag1,
       tag2,
@@ -118,6 +117,17 @@ const tiktokWaterFall = ({
   tiktokHandle: string;
   tiktokPage: Page;
 }) => {
+  console.log("tiktokWaterFall-----", {
+    tag,
+    tag2,
+    orgId,
+    tagId,
+    pageHandle,
+    tiktokHandle,
+    tiktokPage,
+    tag2Id,
+  });
+
   try {
     if (tag) {
       Async.waterfall(
@@ -263,6 +273,29 @@ export const tiktokAllPosts = async ({
 
                     if (data?.isActive) {
                       const tiktok = data?.scriptData?.itemInfo?.itemStruct;
+
+                      console.log("data--------", {
+                        url: url,
+                        username: tiktok.author.uniqueId,
+                        orgId,
+                        postedDate: moment
+                          .unix(tiktok.createTime)
+                          .format("YYYY-MM-DD HH:mm:ss"),
+                        mediaId: tiktok.id,
+                        userProfilePic: tiktok.author.avatarThumb,
+                        followers: String(data.followers),
+                        pageHandle: pageHandle,
+                        hashTag: tagId,
+                        type: "tiktokHashtag",
+                        caption: tiktok.desc,
+                        like_count: String(tiktok.stats.diggCount),
+                        comments_count: String(tiktok.stats.commentCount),
+                        share_count: String(tiktok.stats.shareCount),
+                        views_count: String(tiktok.stats.playCount),
+                        save_count: tiktok.stats.collectCount,
+                        mediaPreviewUrl: tiktok.video.cover,
+                        mediaType: "VIDEO",
+                      });
 
                       axios
                         .post(`${SEVA_API_URL}/content-library/add`, {
