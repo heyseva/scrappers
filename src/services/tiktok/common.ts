@@ -296,6 +296,7 @@ export const getTiktokProfile = async ({
     let url = link.includes("https") ? link : `https://${link}`;
     await page?.goto(url, {
       waitUntil: "networkidle2",
+      timeout: 0, // Disable timeout
     });
 
     const content = await page?.content();

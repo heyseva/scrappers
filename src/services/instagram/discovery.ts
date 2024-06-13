@@ -32,8 +32,9 @@ export const instagamDiscovery = async (
       .db("insta-scrapper")
       .collection("scrap-ig-user")
       .find({
-        version: { $nin: ["seva-assigned", "seva-01", "dev"] },
-        ig_followers_count: { $exists: false },
+        "emails.0": { $exists: true },
+        version: { $not: { $regex: "seva" } },
+        "linktree.0": { $exists: false },
       })
       .toArray();
     // const exitingList = await client
@@ -134,10 +135,10 @@ export const instagamDiscovery = async (
                         console.log("saving", i);
 
                         if (result.result?.business_discovery) {
-                          result.result.emails = extractEmails(
+                          result.extractEmails = extractEmails(
                             result.result.business_discovery.biography
                           );
-                          result.result.urls = urlify(
+                          result.extractUrls = urlify(
                             result.result.business_discovery.biography
                           );
                         }
@@ -151,10 +152,11 @@ export const instagamDiscovery = async (
                             },
                             {
                               $set: {
-                                user: x.user,
-                                data: result,
+                                // user: x.user,
+                                scrapped: result,
                                 active: true,
-                                version: version,
+                                // version: version,
+                                link_fetch: true,
                               },
                             },
                             {
@@ -179,7 +181,7 @@ export const instagamDiscovery = async (
                             {
                               $set: {
                                 active: false,
-                                version: version,
+                                // version: version,
                               },
                             },
                             {
@@ -230,18 +232,22 @@ export const getDiscovery = async ({
   page: Page;
 }) => {
   try {
-    const data = await axios.get(
-      `https://dev.api.heyseva.com/instagram/discovery-search?handle=${username}`
-    );
-    console.log(data.data);
-    if (data.data?.business_discovery) {
-      return data.data;
-    } else {
-      return await ScrapProfile({
-        link: `https://instagram.com/${username}`,
-        page,
-      });
-    }
+    // const data = await axios.get(
+    //   `https://dev.api.heyseva.com/instagram/discovery-search?handle=${username}`
+    // );
+    // console.log(data.data);
+    // if (data.data?.business_discovery) {
+    //   return data.data;
+    // } else {
+    //   return await ScrapProfile({
+    //     link: `https://instagram.com/${username}`,
+    //     page,
+    //   });
+    // }
+    return await ScrapProfile({
+      link: `https://instagram.com/${username}`,
+      page,
+    });
   } catch (error) {
     return await ScrapProfile({
       link: `https://instagram.com/${username}`,

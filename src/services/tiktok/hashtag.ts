@@ -1,4 +1,3 @@
-import dbConnection from "../../utils/mongo";
 import Async from "async";
 import { Request } from "express";
 import { Page } from "puppeteer";
@@ -74,7 +73,6 @@ const getLinks = async ({
 
 export const tiktokHashTag = async (req: Request, tiktokPage: Page) => {
   try {
-    const client: any = await dbConnection("dev");
     // const INSTA: any = [];
     const tag1 = req.query.tag1 as string;
     const tag2 = req.query.tag2 as string;
@@ -136,6 +134,7 @@ const tiktokWaterFall = ({
             tiktokPage
               ?.goto(`https://www.tiktok.com/tag/${tag}`, {
                 waitUntil: "networkidle2",
+                timeout: 0, // Disable timeout
               })
               .then(async () => {
                 const count = await tiktokPage.evaluate(() => {
@@ -234,7 +233,6 @@ export const tiktokAllPosts = async ({
   tag2Id: string | undefined;
 }) => {
   try {
-    const client = (await dbConnection("dev")) as MongoClient;
     console.log("tiktokAllPosts----", posts.length);
     if (posts.length) {
       Async.waterfall(
@@ -243,11 +241,12 @@ export const tiktokAllPosts = async ({
             page
               ?.goto("https://tiktok.com", {
                 waitUntil: "networkidle2",
+                timeout: 0, // Disable timeout
               })
               .then(() => {
                 setTimeout(() => {
                   callback(null);
-                }, 20000);
+                }, 5000);
               });
           },
           ...posts.map(
@@ -262,6 +261,7 @@ export const tiktokAllPosts = async ({
                 page
                   ?.goto(url, {
                     waitUntil: "networkidle2",
+                    timeout: 0, // Disable timeout
                   })
                   .then(async () => {
                     const data = await scrapTiktokVideo({
