@@ -183,11 +183,14 @@ export const scrapTiktokProfileFollowings = async ({
     let url = item.link.includes("https") ? item.link : `https://${item.link}`;
     await page?.goto(url, {
       waitUntil: "networkidle2",
+      timeout: 0,
     });
 
     await page?.waitForTimeout(3000);
 
     await page?.click('[data-e2e="following"]');
+
+    await page?.waitForTimeout(5000);
 
     async function scrollUntilNoMoreData(page: any) {
       let previousHeight;
@@ -201,7 +204,7 @@ export const scrapTiktokProfileFollowings = async ({
         console.log("previousHeight", previousHeight);
         previousHeight = currentHeight;
         // Scroll to the bottom of the page
-        await page.evaluate(() => {
+        await page.evaluate(async () => {
           // @ts-ignore
           const divs = document.querySelectorAll(".eorzdsw0")[0].children;
 
@@ -209,9 +212,15 @@ export const scrapTiktokProfileFollowings = async ({
             behavior: "smooth",
             block: "start",
           });
+          await page?.waitForTimeout(1000);
+          divs[divs.length - 1].scrollIntoView({
+            behavior: "smooth",
+            block: "start",
+          });
         });
+        await page?.waitForTimeout(1000);
         // Wait for the page to load more data
-        await page.waitForTimeout(5000);
+        await page.waitForNetworkIdle();
         currentHeight = await page.evaluate(
           () =>
             // @ts-ignore
@@ -239,7 +248,9 @@ export const scrapTiktokProfileFollowings = async ({
           filter: { link, user: url },
           update: {
             $set: {
-              link,
+              link: link.includes("tiktok.com")
+                ? link
+                : `https://tiktok.com/@${link}`,
               name,
               from: url,
               createdAt: newDate,
@@ -253,7 +264,7 @@ export const scrapTiktokProfileFollowings = async ({
     if (client) {
       client
         .db("insta-scrapper")
-        .collection("scrap_tt_user")
+        .collection("scrap-tt-user")
         .bulkWrite(bulkOps)
         .then(() => {
           setTimeout(() => {

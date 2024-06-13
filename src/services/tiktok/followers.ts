@@ -8,7 +8,17 @@ export const tiktokFollowers = async (page: Page) => {
     const newDate = new Date().toISOString();
     const client: any = await dbConnection("dev");
 
-    const INSTA: any = [];
+    const INSTA: any = [
+      "https://tiktok.com/@tartecosmetics",
+      "https://www.tiktok.com/@youthforia?lang=en",
+      "https://www.tiktok.com/@livetinted?lang=en",
+      "https://www.tiktok.com/@glossier",
+      "https://www.tiktok.com/@milkmakeup",
+      "https://www.tiktok.com/@nyxcosmetics?lang=en",
+      "https://www.tiktok.com/@kyliecosmetics?lang=en",
+      "https://www.tiktok.com/@milanicosmetics?lang=en",
+      "https://www.tiktok.com/@elfyeah?lang=en",
+    ].map((x, i) => ({ link: x, _id: i }));
 
     if (INSTA.length) {
       Async.waterfall(

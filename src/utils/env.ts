@@ -5,6 +5,8 @@ export const PORT = process.env.PORT || 4000;
 
 export const INSTAGRAM_USERNAME = process.env.INSTAGRAM_USERNAME || "";
 export const INSTAGRAM_PASSWORD = process.env.INSTAGRAM_PASSWORD || "";
+export const TT_USERNAME = process.env.TT_USERNAME || "";
+export const TT_PASSWORD = process.env.TT_PASSWORD || "";
 export const NODE_ENV = process.env.NODE_ENV || "";
 
 export const PUPPETEER_EXECUTABLE_PATH =

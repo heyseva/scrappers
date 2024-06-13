@@ -6,7 +6,12 @@ import express from "express";
 import morgan from "morgan";
 import { tiktokProfiles } from "./services/tiktok/tiktokProfiles";
 import { tiktokBrand } from "./services/tiktok/tiktokBrand";
-import { createPage, launchBrowser, loginInstagram } from "./utils/puppeteer";
+import {
+  createPage,
+  launchBrowser,
+  loginInstagram,
+  loginTikTok,
+} from "./utils/puppeteer";
 import { Browser, Page } from "puppeteer";
 import { bulkScraper, scrapLT } from "./services/linktree/scrapper";
 import { tiktokVideo } from "./services/tiktok/video";
@@ -15,7 +20,12 @@ import { instagamFollowings } from "./services/instagram/followers";
 import { instagamPosts } from "./services/instagram/posts";
 import { instagamAllProfiles } from "./services/instagram/allProfiles";
 import { calculateIGEngagementRateRange } from "./services/instagram/calculateEngagementRate";
-import { INSTAGRAM_PASSWORD, INSTAGRAM_USERNAME } from "./utils/env";
+import {
+  INSTAGRAM_PASSWORD,
+  INSTAGRAM_USERNAME,
+  TT_PASSWORD,
+  TT_USERNAME,
+} from "./utils/env";
 import { tiktokAllPosts } from "./services/tiktok/allposts";
 import {
   createLoginSession,
@@ -50,14 +60,14 @@ let browser: Browser;
   browser = await launchBrowser();
   // page = await createPage(browser);
   // linkTreePage = await createPage(browser);
-  // tiktokPage = await createPage(browser);
+  tiktokPage = await createPage(browser);
   instagramPage = await createPage(browser);
 
   const client = (await dbConnection("dev")) as MongoClient;
 
-  const context = await browser.createIncognitoBrowserContext();
-  // let tiktokLoginPage: Page;
-  const tiktokLoginPage = await context.newPage();
+  // const context = await browser.createIncognitoBrowserContext();
+  let tiktokLoginPage: Page;
+  // const tiktokLoginPage = await context.newPage();
   // Handle WebSocket connections
   wss
     .on("connection", async (ws: WebSocket) => {
@@ -151,6 +161,13 @@ app.get("/bulk-scrape-lt", async (req: Request, res: Response) => {
 
 app.get("/scrap-ig-profile", async (req: Request, res: Response) => {
   await instagamProfile(req, res, instagramPage);
+});
+
+app.get("/tt-login", async (req: Request, res: Response) => {
+  await tiktokPage.waitForTimeout(2000);
+  await loginTikTok(tiktokPage, TT_USERNAME, TT_PASSWORD);
+  await tiktokPage.waitForTimeout(2000);
+  res.send("Logged in to tiktok...");
 });
 
 app.get("/scrap-ig-followings", async (req: Request, res: Response) => {
