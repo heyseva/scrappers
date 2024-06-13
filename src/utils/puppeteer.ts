@@ -65,6 +65,9 @@ const loginTikTok = async (
   password: string
 ) => {
   if (page) {
+    await page.goto("https://www.tiktok.com/login/phone-or-email/email", {
+      waitUntil: "networkidle2",
+    });
     await page.waitForSelector('input[name="username"]');
     await page.type('input[name="username"]', username, {
       delay: 50,
