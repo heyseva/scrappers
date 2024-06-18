@@ -35,7 +35,7 @@ async function scrollUntilNoMoreData(scrollPage: Page) {
           });
         }, currentHeight);
 
-        await scrollPage?.waitForTimeout(5000);
+        await scrollPage?.waitForTimeout(10000);
         currentItems = await scrollPage?.evaluate(() => {
           const element = document.querySelectorAll(
             '[data-e2e="challenge-item"]'
@@ -181,7 +181,14 @@ const tiktokWaterFall = ({
                 })
                 .get();
 
-              resolve(data.filter((x) => !x.userName.includes(tiktokHandle)));
+              resolve(
+                data.filter(
+                  (x) =>
+                    !x.userName
+                      .toLowerCase()
+                      .includes(tiktokHandle.toLowerCase())
+                )
+              );
             }).then((data) => {
               callback(null, data);
             });

@@ -31,84 +31,111 @@ export const bulkScraper = async (page: Page) => {
   const version = `repo-${new Date().getTime()}`;
   console.log("version---", version);
 
-  const profiles: Array<{ Link: string }> = await client
+  let profiles: any = await client
     .db("insta-scrapper")
-    .collection("input-lt-user")
+    .collection("scrap-ig-user")
     .find({
-      active: true,
+      "allLinks.0": { $exists: true },
     })
     .toArray();
+
+  profiles = profiles
+    .filter((x: any) => x.allLinks.some((y: any) => y.includes("linktr")))
+    .map((x: any) => {
+      return {
+        ...x,
+        Link: x.allLinks.find((y: any) => y.includes("linktr")),
+      };
+    });
+
+  console.log("profiles", profiles.length);
+
   Async.waterfall(
     [
       function (callback: (arg0: null) => void) {
         console.log("start");
-        callback(null);
+        setTimeout(() => {
+          callback(null);
+        }, 20000);
       },
       ...profiles.map(
         (x: any, i: number) =>
           function (callback: any) {
             console.log("fetching:", i, ":", x.Link);
-            Promise.resolve(scrapLinktreeProfile({ link: x.Link, page })).then(
-              async (result) => {
-                try {
-                  if (result) {
-                    (await client)
-                      .db("insta-scrapper")
-                      .collection("scrap-lt-user")
-                      .updateOne(
-                        {
-                          link: x.Link,
-                        },
-                        {
-                          $set: {
-                            ...result,
-                            active: true,
-                            version: version,
-                            created_at: new Date(),
-                          },
-                        },
-                        {
-                          upsert: true,
-                          new: true,
-                        }
-                      );
-                    setTimeout(() => {
-                      console.log("done", i);
-                      callback(null);
-                    }, 10000);
-                  } else {
-                    (await client)
-                      .db("insta-scrapper")
-                      .collection("scrap-lt-user")
-                      .updateOne(
-                        {
-                          link: x.Link,
-                        },
-                        {
-                          $set: {
-                            active: false,
-                            version: version,
-                            created_at: new Date(),
-                          },
-                        },
-                        {
-                          upsert: true,
-                          new: true,
-                        }
-                      );
-                    setTimeout(() => {
-                      console.log("done", i);
-                      callback(null);
-                    }, 10000);
-                  }
-                } catch (error: AxiosError | any) {
-                  console.log("error--done", i, error.message);
-                  setTimeout(() => {
-                    callback(null);
-                  }, 1000);
+            client
+              .db("insta-scrapper")
+              .collection("scrap-lt-user")
+              .findOne({
+                link: { $regex: x.Link },
+              })
+              .then((result: any) => {
+                if (!result) {
+                  Promise.resolve(
+                    scrapLinktreeProfile({ link: x.Link, page })
+                  ).then(async (result) => {
+                    try {
+                      if (result) {
+                        (await client)
+                          .db("insta-scrapper")
+                          .collection("scrap-lt-user")
+                          .updateOne(
+                            {
+                              link: x.Link,
+                            },
+                            {
+                              $set: {
+                                userId: x._id,
+                                ...result,
+                                active: true,
+                                created_at: new Date(),
+                              },
+                            },
+                            {
+                              upsert: true,
+                              new: true,
+                            }
+                          );
+                        setTimeout(() => {
+                          console.log("done", i);
+                          callback(null);
+                        }, 10000);
+                      } else {
+                        (await client)
+                          .db("insta-scrapper")
+                          .collection("scrap-lt-user")
+                          .updateOne(
+                            {
+                              link: x.Link,
+                            },
+                            {
+                              $set: {
+                                userId: x._id,
+                                active: false,
+                                created_at: new Date(),
+                              },
+                            },
+                            {
+                              upsert: true,
+                              new: true,
+                            }
+                          );
+                        setTimeout(() => {
+                          console.log("done", i);
+                          callback(null);
+                        }, 10000);
+                      }
+                    } catch (error: AxiosError | any) {
+                      console.log("error--done", i, error.message);
+                      setTimeout(() => {
+                        callback(null);
+                      }, 1000);
+                    }
+                  });
+                } else {
+                  console.log("already Done", i);
+                  callback(null);
                 }
-              }
-            );
+              });
           }
       ),
     ],
@@ -130,10 +157,13 @@ const scrapLinktreeProfile = async ({
   page: any;
 }) => {
   try {
+    link = link.includes("http") ? link : `https://${link}`;
+
+    console.log("scrapLinktreeProfile----", { link });
     await page?.goto(link, {
       waitUntil: "networkidle2",
     });
-    await page?.waitForTimeout(3000);
+    await page?.waitForTimeout(10000);
     const content = await page?.content();
 
     const $ = cheerio.load(content);

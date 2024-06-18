@@ -42,7 +42,11 @@ function calculateEngagementRate(
   comments: number,
   followers: number
 ): number {
-  return ((likes + comments) / followers) * 100;
+  if (likes && comments) {
+    return ((likes + comments) / followers) * 100;
+  } else {
+    return 0;
+  }
 }
 
 function calculateMeanEngagementRate(engagementRates: number[]): number {
@@ -112,9 +116,16 @@ export function analyzeEngagement(data: InputData): string {
   );
 
   // Output the results
-  return `${confidenceInterval[0].toFixed(
-    1
-  )}% - ${confidenceInterval[1].toFixed(1)}%`;
+  if (
+    confidenceInterval[0].toFixed(1) == "0.0" &&
+    confidenceInterval[1].toFixed(1) == "0.0"
+  ) {
+    return "";
+  } else {
+    return `${confidenceInterval[0].toFixed(
+      1
+    )}% - ${confidenceInterval[1].toFixed(1)}%`;
+  }
 }
 
 export function analyzeTTEngagement(data: TTInputData): string {
